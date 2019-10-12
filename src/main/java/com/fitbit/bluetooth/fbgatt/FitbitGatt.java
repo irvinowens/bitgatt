@@ -16,6 +16,7 @@ import com.fitbit.bluetooth.fbgatt.tx.AddGattServerServiceTransaction;
 import com.fitbit.bluetooth.fbgatt.tx.ClearServerServicesTransaction;
 import com.fitbit.bluetooth.fbgatt.tx.GattConnectTransaction;
 import com.fitbit.bluetooth.fbgatt.util.GattUtils;
+import com.fitbit.bluetooth.fbgatt.util.LooperWatchdog;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -114,7 +115,10 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
     @VisibleForTesting
     AtomicBoolean isStarted = new AtomicBoolean(false);
     private Handler connectionCleanup;
-    private HandlerThread gattServerCallbackHandlerThread = new HandlerThread("FitbitGatt Async Operation Thread");
+    @Nullable
+    private LooperWatchdog asyncOperationThreadWatchdog;
+    // this should be max priority so as to not affect performance
+    private HandlerThread fitbitGattAsyncOperationThread = new HandlerThread("FitbitGatt Async Operation Thread", Thread.MAX_PRIORITY);
     private Handler fitbitGattAsyncOperationHandler;
     private BluetoothRadioStatusListener radioStatusListener;
     @VisibleForTesting
@@ -151,8 +155,11 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
         // we will default to one expected device and that it should not looking
         ourInstance.alwaysConnectedScanner = new AlwaysConnectedScanner(1, false, Looper.getMainLooper());
         ourInstance.powerAggregator = new BatteryDataStatsAggregator(null);
-        ourInstance.gattServerCallbackHandlerThread.start();
-        ourInstance.fitbitGattAsyncOperationHandler = new Handler(ourInstance.gattServerCallbackHandlerThread.getLooper());
+        ourInstance.fitbitGattAsyncOperationThread.start();
+        ourInstance.fitbitGattAsyncOperationHandler = new Handler(ourInstance.fitbitGattAsyncOperationThread.getLooper());
+        // we need to make sure that this thread is alive and responsive or our gatt
+        // flow will stop and we won't be able to tell
+        ourInstance.asyncOperationThreadWatchdog = new LooperWatchdog(ourInstance.fitbitGattAsyncOperationThread.getLooper());
     }
 
     @VisibleForTesting
@@ -197,8 +204,8 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
      * @return The gatt server handler thread
      */
 
-    public HandlerThread getGattServerCallbackHandlerThread() {
-        return gattServerCallbackHandlerThread;
+    public HandlerThread getFitbitGattAsyncOperationThread() {
+        return fitbitGattAsyncOperationThread;
     }
 
     /**
@@ -804,7 +811,7 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
         powerAggregator = new BatteryDataStatsAggregator(context);
         this.appContext = context.getApplicationContext();
         this.serverCallback = new GattServerCallback();
-        this.clientCallback = new GattClientCallback(context);
+        this.clientCallback = new GattClientCallback();
         this.aclListener = new LowEnergyAclListener();
         this.aclListener.register(this.appContext);
         connectionCleanup = new Handler(context.getMainLooper());
@@ -825,6 +832,9 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
         addConnectedDevices(context);
         // will start the cleanup process
         decrementAndInvalidateClosedConnections();
+        if(asyncOperationThreadWatchdog != null) {
+            asyncOperationThreadWatchdog.startProbing();
+        }
         return true;
     }
 
@@ -883,6 +893,9 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
         if (radioStatusListener != null) {
             radioStatusListener.stopListening();
             radioStatusListener.removeListener();
+        }
+        if(asyncOperationThreadWatchdog != null) {
+            this.asyncOperationThreadWatchdog.stopProbing();
         }
     }
 
