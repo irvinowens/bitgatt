@@ -21,6 +21,7 @@ package com.fitbit.bluetooth.fbgatt {
     method public void registerAlwaysConnectedScannerListener(com.fitbit.bluetooth.fbgatt.AlwaysConnectedScannerListener);
     method public void removeScanFilter(@NonNull Context, @NonNull ScanFilter);
     method public void setNumberOfExpectedDevices(int);
+    method public void setScanFilters(List<ScanFilter>);
     method public void setShouldKeepLooking(boolean);
     method public boolean shouldKeepLooking();
     method public boolean start(@NonNull Context);
