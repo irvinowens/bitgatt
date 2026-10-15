@@ -879,6 +879,26 @@ package com.fitbit.bluetooth.fbgatt.engine {
     enum_constant public static final com.fitbit.bluetooth.fbgatt.engine.Admit.GuardState OK;
   }
 
+  public final class ConnectionEngine {
+    ctor public ConnectionEngine(@NonNull java.lang.String threadName);
+    method public void awaitLatch(@NonNull CountDownLatch latch, long timeoutMs);
+    method public void clearQueue();
+    method public static void deliverOnMainLooper(@NonNull Looper looper, @NonNull Handler handler, @NonNull Runnable action);
+    method @NonNull public Thread getTransactionThread();
+    method public boolean isQueueThreadStopped();
+    method @NonNull public static Runnable pollMain(@NonNull Thread thread, long timeoutMs);
+    method public void queueTransaction(@NonNull Runnable tx);
+    method public void scheduleTimeout(@NonNull Handler handler, long delayMs, @NonNull Runnable block);
+    method @kotlin.jvm.Synchronized public void start();
+    method @kotlin.jvm.Synchronized public void stop();
+    field @NonNull public static final com.fitbit.bluetooth.fbgatt.engine.ConnectionEngine.Companion Companion;
+  }
+
+  public static final class ConnectionEngine.Companion {
+    method public void deliverOnMainLooper(@NonNull Looper looper, @NonNull Handler handler, @NonNull Runnable action);
+    method @NonNull public Runnable pollMain(@NonNull Thread thread, long timeoutMs);
+  }
+
 }
 
 package com.fitbit.bluetooth.fbgatt.logging {

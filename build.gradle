@@ -123,13 +123,9 @@ def metalavaClasspath = {
 }
 
 def metalavaJavaSourceArg = {
-    // ConnectionEngine.kt uses @Throws(InterruptedException::class). Metalava 1.0.0-alpha16
-    // aborts on that class-literal annotation (PsiType ErrorType). Every other source is included
-    // so suspend GattConnection.runTx is part of the checked signature.
     fileTree(file('src/main/java')) {
         include '**/*.java'
         include '**/*.kt'
-        exclude '**/ConnectionEngine.kt'
     }.files.collect { it.absolutePath }.join(',')
 }
 
@@ -153,7 +149,8 @@ tasks.register('updatePublicApi', JavaExec) {
             '--hide', 'UnresolvedImport',
             '--hide', 'ReferencesHidden',
             '--hide', 'HiddenTypeParameter',
-            '--hide', 'DeprecationMismatch'
+            '--hide', 'DeprecationMismatch',
+            '--exclude-annotation', 'kotlin.jvm.Throws'
     }
 }
 
@@ -178,7 +175,8 @@ tasks.register('snapshotPublicApi', JavaExec) {
             '--hide', 'UnresolvedImport',
             '--hide', 'ReferencesHidden',
             '--hide', 'HiddenTypeParameter',
-            '--hide', 'DeprecationMismatch'
+            '--hide', 'DeprecationMismatch',
+            '--exclude-annotation', 'kotlin.jvm.Throws'
     }
 }
 

@@ -1182,6 +1182,11 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
 
     override fun bluetoothTurningOff() {
         isBluetoothOn = false
+        // Stop advertising before the Samsung clear-services strategy runs. That strategy
+        // posts clearServices() and must not see a live advertiser.
+        if (advertiser != null) {
+            advertiser!!.stop()
+        }
         val strategyDevice = AndroidDevice.Builder().manufacturerName("Samsung").build()
         val executableStrategy = StrategyProvider().getStrategyForPhoneAndGattConnection(
             strategyDevice,
