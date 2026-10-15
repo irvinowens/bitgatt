@@ -23,6 +23,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
+
+import androidx.core.content.ContextCompat;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
@@ -166,7 +169,12 @@ public class CreateBondTransaction extends GattTransaction {
 
     private void createBond(Context context, FitbitBluetoothDevice device) {
         this.context = context;
-        context.registerReceiver(receiver, new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED));
+        IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.registerReceiver(context, receiver, bondFilter, ContextCompat.RECEIVER_EXPORTED);
+        } else {
+            context.registerReceiver(receiver, bondFilter);
+        }
         device.getBtDevice().createBond();
     }
 

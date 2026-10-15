@@ -14,8 +14,10 @@ import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.Build;
 import android.os.ParcelUuid;
 import android.os.SystemClock;
+import androidx.core.content.ContextCompat;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -97,7 +99,11 @@ public class PeripheralScannerTest {
         names.add("Mira");
         appContext = InstrumentationRegistry.getContext();
         IntentFilter filter = new IntentFilter(PeripheralScanner.SCANNED_DEVICE_ACTION);
-        appContext.registerReceiver(handleIntentBasedScanResult, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.registerReceiver(appContext, handleIntentBasedScanResult, filter, ContextCompat.RECEIVER_EXPORTED);
+        } else {
+            appContext.registerReceiver(handleIntentBasedScanResult, filter);
+        }
     }
 
     @AfterClass

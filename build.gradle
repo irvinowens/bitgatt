@@ -83,6 +83,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.multidex:multidex:$MULTIDEX_VERSION"
     implementation "androidx.appcompat:appcompat:$APP_COMPAT_VERSION"
+    implementation "androidx.core:core:1.15.0"
     implementation "com.jakewharton.timber:timber:$TIMBER_VERSION"
     implementation "com.facebook.stetho:stetho:$STETHO_VERSION"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$COROUTINES_VERSION"

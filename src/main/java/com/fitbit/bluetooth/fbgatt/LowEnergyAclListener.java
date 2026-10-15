@@ -15,6 +15,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
+
+import androidx.core.content.ContextCompat;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,7 +60,11 @@ public class LowEnergyAclListener extends BroadcastReceiver {
         }
 
         for (IntentFilter f : filters) {
-            context.registerReceiver(this, f);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.registerReceiver(context, this, f, ContextCompat.RECEIVER_EXPORTED);
+            } else {
+                context.registerReceiver(this, f);
+            }
         }
         int newValue = timesRegistered.incrementAndGet();
         // just to help someone debug if this is happening too much

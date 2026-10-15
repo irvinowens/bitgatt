@@ -15,9 +15,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+
+import androidx.core.content.ContextCompat;
 import androidx.annotation.VisibleForTesting;
 
 import timber.log.Timber;
@@ -192,7 +195,12 @@ class BluetoothRadioStatusListener {
 
     void startListening() {
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        context.getApplicationContext().registerReceiver(receiver, filter);
+        Context appContext = context.getApplicationContext();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.registerReceiver(appContext, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
+        } else {
+            appContext.registerReceiver(receiver, filter);
+        }
     }
 
     /**

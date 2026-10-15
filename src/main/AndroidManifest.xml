@@ -9,25 +9,27 @@
 <manifest package="com.fitbit.bluetooth.fbgatt"
           xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE"/>
+
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false"/>
+
     <!-- Be sure to add this into your app's manifest or utilize the manifest merger to make sure
          that you can use the pending intent scanner, otherwise results will not be delivered
-         to your application -->
+         to your application. The receiver stays exported and manifest-registered so scan
+         results survive process death. Do not guard it with a permission: the Bluetooth
+         stack is the sender and does not hold a location permission. -->
     <application>
-        <receiver android:exported="true" android:name=".HandleIntentBasedScanResult"
-            android:permission="android.permission.ACCESS_COURSE_LOCATION">
+        <receiver android:exported="true" android:name=".HandleIntentBasedScanResult">
             <intent-filter>
                 <!-- if you change this make sure to also change it in {@link PeripheralScanner} -->
                 <action android:name="com.fitbit.bluetooth.fbgatt.ScannedDevice" />
-            </intent-filter>
-        </receiver>
-        <receiver android:name=".LowEnergyAclListener" android:exported="true"
-                  android:permission="android.permission.ACCESS_FINE_LOCATION">
-            <intent-filter>
-                <action android:name="BluetoothDevice.ACTION_FOUND" />
             </intent-filter>
         </receiver>
     </application>

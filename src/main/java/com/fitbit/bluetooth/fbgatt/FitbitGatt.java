@@ -61,6 +61,7 @@ import androidx.annotation.WorkerThread;
 import timber.log.Timber;
 
 import static com.fitbit.bluetooth.fbgatt.PeripheralScanner.BACKGROUND_SCAN_REQUEST_CODE;
+import static com.fitbit.bluetooth.fbgatt.PeripheralScanner.scanPendingIntentFlags;
 
 /**
  * The gatt interface, will pass a connection object to a caller with a reference to this instance
@@ -1503,7 +1504,7 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
             PendingIntent pending;
             try {
                 pending = PendingIntent.getBroadcast(context,
-                    BACKGROUND_SCAN_REQUEST_CODE, regularIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                    BACKGROUND_SCAN_REQUEST_CODE, regularIntent, scanPendingIntentFlags());
             } catch (NoSuchMethodError error) {
                 Timber.i(error, "There was a no such method error stopping the pending intent scan, assuming stopped");
                 return;

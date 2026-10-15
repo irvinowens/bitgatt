@@ -57,6 +57,19 @@ class PeripheralScanner {
     private final static int MAX_BACKOFF_MULTIPLIER = 2; // should always correspond to roughly 16 minutes worst case
     static final int BACKGROUND_SCAN_REQUEST_CODE = 21436;
     static final String SCANNED_DEVICE_ACTION = "com.fitbit.bluetooth.fbgatt.ScannedDevice";
+
+    /**
+     * Flags for the scan {@link PendingIntent}. The Bluetooth stack writes
+     * {@code EXTRA_LIST_SCAN_RESULT}, {@code EXTRA_CALLBACK_TYPE}, and {@code EXTRA_ERROR_CODE},
+     * so the intent cannot be immutable. Every creation site must use this helper or a later
+     * stop will not match the scan intent.
+     */
+    static int scanPendingIntentFlags() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE;
+        }
+        return PendingIntent.FLAG_UPDATE_CURRENT;
+    }
     private static final int MAX_SCANS_ALLOWED_PER_30_SECONDS = 4;
     private static final int DEFAULT_SCAN_BACKOFF_MULTIPLIER = 1;
 
@@ -601,7 +614,7 @@ class PeripheralScanner {
         broadcastIntent.setAction(SCANNED_DEVICE_ACTION);
         broadcastIntent.setClass(context, HandleIntentBasedScanResult.class);
         return PendingIntent.getBroadcast(context,
-            BACKGROUND_SCAN_REQUEST_CODE, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            BACKGROUND_SCAN_REQUEST_CODE, broadcastIntent, scanPendingIntentFlags());
     }
 
     /**
@@ -651,7 +664,7 @@ class PeripheralScanner {
                 return null;
             }
             PendingIntent pending = PendingIntent.getBroadcast(context,
-                BACKGROUND_SCAN_REQUEST_CODE, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                BACKGROUND_SCAN_REQUEST_CODE, broadcastIntent, scanPendingIntentFlags());
             // if a pending intent scan is underway we will clear it first as we now know that
             // this consumes gatt_ifs we can not have more than one ever running at a time
             // we can't rely on the boolean because we might have been killed between calls
