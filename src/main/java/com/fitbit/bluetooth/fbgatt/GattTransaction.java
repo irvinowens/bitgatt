@@ -492,11 +492,11 @@ public abstract class GattTransaction extends GattServerCallback implements Gatt
     /**
      * Reset transactions may run from an error state. Bluetooth off still rejects them.
      */
-    protected boolean admitsRegardlessOfState() {
+    public boolean admitsRegardlessOfState() {
         return false;
     }
 
-    protected GattState getSuccessState() {
+    public GattState getSuccessState() {
         return successEndState;
     }
 

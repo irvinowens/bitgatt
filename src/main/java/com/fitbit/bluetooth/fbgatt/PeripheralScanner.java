@@ -50,7 +50,7 @@ import static com.fitbit.bluetooth.fbgatt.FitbitGatt.atLeastSDK;
  * A Scanner for Bluetooth LE Devices
  */
 @TargetApi(21)
-class PeripheralScanner {
+public class PeripheralScanner {
 
     final static long SCAN_DURATION = TimeUnit.SECONDS.toMillis(120);
     private final static long SCAN_INTERVAL = SCAN_DURATION * 2;

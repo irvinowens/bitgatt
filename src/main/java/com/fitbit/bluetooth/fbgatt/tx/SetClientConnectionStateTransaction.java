@@ -73,7 +73,7 @@ public class SetClientConnectionStateTransaction extends GattTransaction {
     }
 
     @Override
-    protected boolean admitsRegardlessOfState() {
+    public boolean admitsRegardlessOfState() {
         return true;
     }
 

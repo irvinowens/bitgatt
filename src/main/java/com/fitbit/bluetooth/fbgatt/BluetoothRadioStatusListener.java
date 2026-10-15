@@ -32,7 +32,7 @@ import timber.log.Timber;
  * <p>
  * Created by iowens on 8/27/18.
  */
-class BluetoothRadioStatusListener {
+public class BluetoothRadioStatusListener {
     @VisibleForTesting
     static final long MIN_TURNING_OFF_CALLBACK_DELAY = 500;
     static final long MIN_TURNING_ON_CALLBACK_DELAY = 1000;

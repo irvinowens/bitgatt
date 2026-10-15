@@ -41,7 +41,7 @@ import timber.log.Timber;
  * Created by iowens on 10/17/17.
  */
 
-class GattServerCallback extends BluetoothGattServerCallback {
+public class GattServerCallback extends BluetoothGattServerCallback {
 
     private final @NonNull Handler handler;
 

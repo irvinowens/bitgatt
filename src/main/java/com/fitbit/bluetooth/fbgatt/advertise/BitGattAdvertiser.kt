@@ -95,7 +95,7 @@ class BitGattAdvertiser internal constructor(
 
     private fun serverReady(request: AdvertiseRequest): Boolean {
         val connection = server() ?: return false
-        if (connection.gattState != GattState.IDLE) {
+        if (connection.getGattState() != GattState.IDLE) {
             return false
         }
         val hosted = hostedServiceUuids()
@@ -107,7 +107,7 @@ class BitGattAdvertiser internal constructor(
     }
 
     private fun hostedServiceUuids(): List<UUID> {
-        val services = server()?.server?.services ?: return emptyList()
+        val services = server()?.getServer()?.services ?: return emptyList()
         return services.mapNotNull { it?.uuid }
     }
 

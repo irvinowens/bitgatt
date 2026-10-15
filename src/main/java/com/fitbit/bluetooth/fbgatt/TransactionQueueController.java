@@ -15,7 +15,7 @@ import com.fitbit.bluetooth.fbgatt.engine.ConnectionEngine;
  * {@code getClientTransactionQueueController()} returns this shell so existing callers keep
  * compiling. There is no second queue.
  */
-class TransactionQueueController {
+public class TransactionQueueController {
 
     private final ConnectionEngine engine;
 
