@@ -150,6 +150,12 @@ public class CreateBondTransaction extends GattTransaction {
     }
 
     private void createBond(Context context) {
+        String missing = GattUtils.missingConnectPermission(context);
+        if (missing != null) {
+            Timber.w("[%s] createBond refused, missing %s", getDevice(), missing);
+            bondFailure();
+            return;
+        }
         FitbitBluetoothDevice device = getDevice();
         if (device == null) {
             Timber.w("[%s] Couldn't create the bond because device was null", device);

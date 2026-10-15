@@ -21,8 +21,13 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
+
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import java.util.Arrays;
 import java.util.List;
@@ -426,5 +431,59 @@ public class GattUtils {
             default:
                 return "UNKNOWN" + Integer.toString(devClass);
         }
+    }
+
+    /**
+     * @return the permission that is missing for a scan, or null when the scan may proceed.
+     *         API 31+ checks {@code BLUETOOTH_SCAN}. API 21–30 also checks fine location.
+     */
+    @Nullable
+    public static String missingScanPermission(@Nullable Context context) {
+        if (context == null) {
+            return "context";
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return granted(context, Manifest.permission.BLUETOOTH_SCAN) ? null : Manifest.permission.BLUETOOTH_SCAN;
+        }
+        if (!granted(context, Manifest.permission.BLUETOOTH)) {
+            return Manifest.permission.BLUETOOTH;
+        }
+        if (!granted(context, Manifest.permission.ACCESS_FINE_LOCATION)) {
+            return Manifest.permission.ACCESS_FINE_LOCATION;
+        }
+        return null;
+    }
+
+    /**
+     * @return the permission that is missing for connect, GATT server, or bond, or null when it may proceed.
+     */
+    @Nullable
+    public static String missingConnectPermission(@Nullable Context context) {
+        if (context == null) {
+            return "context";
+        }
+        String permission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                ? Manifest.permission.BLUETOOTH_CONNECT
+                : Manifest.permission.BLUETOOTH;
+        return granted(context, permission) ? null : permission;
+    }
+
+    /**
+     * @return the permission that is missing for advertising, or null when it may proceed.
+     */
+    @Nullable
+    public static String missingAdvertisePermission(@Nullable Context context) {
+        if (context == null) {
+            return "context";
+        }
+        String permission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                ? Manifest.permission.BLUETOOTH_ADVERTISE
+                : Manifest.permission.BLUETOOTH_ADMIN;
+        return granted(context, permission) ? null : permission;
+    }
+
+    private static boolean granted(@Nullable Context context, String permission) {
+        return context != null
+                && ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
     }
 }

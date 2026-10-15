@@ -8,6 +8,10 @@
 
 package com.fitbit.bluetooth.fbgatt;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
@@ -23,8 +27,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.stubbing.Answer;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -38,8 +45,13 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -301,6 +313,81 @@ public class PeripheralScannerTest {
         peripheralScanner.scanTimeoutRunnable.run();
         assertTrue(peripheralScanner.isPeriodicalScanEnabled());
         peripheralScanner.setInstrumentationTestMode(false);
+    }
+
+    @Test
+    public void macOnlyBackgroundScanAndBadAddress() {
+        SdkInt.set(31);
+        try {
+            BluetoothManager manager = mock(BluetoothManager.class);
+            BluetoothAdapter adapter = mock(BluetoothAdapter.class);
+            when(adapter.isEnabled()).thenReturn(true);
+            when(manager.getAdapter()).thenReturn(adapter);
+            when(mockContext.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(manager);
+            when(adapter.getRemoteDevice(anyString())).thenAnswer(invocation -> {
+                String address = invocation.getArgument(0);
+                if ("AA:BB:CC:DD:EE:FF".equals(address)) {
+                    BluetoothDevice device = mock(BluetoothDevice.class);
+                    when(device.getAddress()).thenReturn(address);
+                    return device;
+                }
+                throw new IllegalArgumentException(address);
+            });
+            ScannerInterface platform = mock(ScannerInterface.class);
+            when(platform.isBluetoothEnabled()).thenReturn(true);
+            when(platform.startScan(anyList(), any(ScanSettings.class), nullable(android.app.PendingIntent.class))).thenReturn(0);
+            peripheralScanner.injectMockScanner(platform);
+            peripheralScanner.setScanFilters(Collections.emptyList());
+
+            peripheralScanner.startBackgroundScan(
+                    java.util.Arrays.asList("AA:BB:CC:DD:EE:FF", "not-a-mac"),
+                    new Intent(mockContext, HandleIntentBasedScanResult.class),
+                    mockContext);
+            ArgumentCaptor<List> filters = ArgumentCaptor.forClass(List.class);
+            verify(platform).startScan(filters.capture(), any(ScanSettings.class), nullable(android.app.PendingIntent.class));
+            assertEquals(1, filters.getValue().size());
+            assertEquals("AA:BB:CC:DD:EE:FF", ((ScanFilter) filters.getValue().get(0)).getDeviceAddress());
+
+            assertNull(peripheralScanner.startBackgroundScan(
+                    Collections.singletonList("still-not-a-mac"),
+                    new Intent(mockContext, HandleIntentBasedScanResult.class),
+                    mockContext));
+            verify(platform, times(1)).startScan(anyList(), any(ScanSettings.class), nullable(android.app.PendingIntent.class));
+        } finally {
+            SdkInt.restore();
+        }
+    }
+
+    @Test
+    public void rssiEqualToFloorIsDropped() {
+        peripheralScanner.addRssiFilter(-60);
+        List<Integer> delivered = new ArrayList<>();
+        gatt.registerGattEventListener(new NoOpGattCallback() {
+            @Override
+            public void onBluetoothPeripheralDiscovered(@NonNull GattConnection connection) {
+                delivered.add(connection.getDevice().getRssi());
+            }
+        });
+        peripheralScanner.populateMockScanResultIndividualValue(0, scanResult("11:22:33:44:55:01", -60));
+        assertTrue(delivered.isEmpty());
+        peripheralScanner.populateMockScanResultIndividualValue(0, scanResult("11:22:33:44:55:02", -59));
+        assertEquals(Collections.singletonList(-59), delivered);
+
+        delivered.clear();
+        peripheralScanner.populateMockScanResultBatchValues(Collections.singletonList(scanResult("11:22:33:44:55:03", -60)));
+        assertTrue(delivered.isEmpty());
+        peripheralScanner.populateMockScanResultBatchValues(Collections.singletonList(scanResult("11:22:33:44:55:04", -59)));
+        assertEquals(Collections.singletonList(-59), delivered);
+    }
+
+    private static ScanResult scanResult(String address, int rssi) {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        when(device.getAddress()).thenReturn(address);
+        when(device.getName()).thenReturn(address);
+        ScanResult result = mock(ScanResult.class);
+        when(result.getDevice()).thenReturn(device);
+        when(result.getRssi()).thenReturn(rssi);
+        return result;
     }
 
     public static class NoOpGattCallback implements FitbitGatt.FitbitGattCallback {

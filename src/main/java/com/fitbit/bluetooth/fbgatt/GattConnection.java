@@ -9,6 +9,7 @@
 package com.fitbit.bluetooth.fbgatt;
 
 import com.fitbit.bluetooth.fbgatt.util.GattStatus;
+import com.fitbit.bluetooth.fbgatt.util.GattUtils;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -364,6 +365,10 @@ public class GattConnection implements Closeable {
             mockConnect();
             return true;
         }
+        if (refuseMissingConnectPermission(device)) {
+            setState(GattState.FAILURE_CONNECTING);
+            return false;
+        }
         /* we can re-use the listener here because all of our gatt instances are using the
          * same listener which calls back everyone, but will only notify the transaction instances
          * on the connection that are relevant using the device as a discriminator.
@@ -379,11 +384,24 @@ public class GattConnection implements Closeable {
         return success;
     }
 
+    private boolean refuseMissingConnectPermission(FitbitBluetoothDevice device) {
+        String missing = GattUtils.missingConnectPermission(FitbitGatt.getInstance().getAppContext());
+        if (missing == null) {
+            return false;
+        }
+        Timber.w("[%s] Connect refused, missing %s", device, missing);
+        return true;
+    }
+
     private boolean ifGattHasNeverBeenInstantiatedConnect(FitbitBluetoothDevice device) {
         if (mockMode) {
             // mock connect
             mockConnect();
             return true;
+        }
+        if (refuseMissingConnectPermission(device)) {
+            setState(GattState.FAILURE_CONNECTING);
+            return false;
         }
         if (atLeastSDK(Build.VERSION_CODES.M)) {
             gatt = device.getBtDevice().connectGatt(FitbitGatt.getInstance().getAppContext(), false, FitbitGatt.getInstance().getClientCallback(), BluetoothDevice.TRANSPORT_LE);

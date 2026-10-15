@@ -19,6 +19,9 @@ import android.content.Intent;
 import android.os.Build;
 import androidx.annotation.NonNull;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import com.fitbit.bluetooth.fbgatt.util.GattUtils;
 import com.fitbit.bluetooth.fbgatt.util.ScanFailedReason;
 
@@ -39,10 +42,34 @@ import timber.log.Timber;
 
 public class HandleIntentBasedScanResult extends BroadcastReceiver {
 
+    private static final ExecutorService SCAN_RESULT_EXECUTOR = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "bitgatt-intent-scan");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     @TargetApi(Build.VERSION_CODES.O)
     @Override
     public void onReceive(Context context, Intent intent) {
+        if (intent == null) {
+            Timber.v("The intent service was started with a null intent.  We are probably initializing");
+            return;
+        }
+        final PendingResult pendingResult = goAsync();
+        final Context appContext = context.getApplicationContext() != null ? context.getApplicationContext() : context;
+        SCAN_RESULT_EXECUTOR.execute(() -> {
+            try {
+                handleScanIntent(appContext, intent);
+            } finally {
+                if (pendingResult != null) {
+                    pendingResult.finish();
+                }
+            }
+        });
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private void handleScanIntent(Context context, Intent intent) {
         if (intent != null) {
             // need to use the adapter directly because bitgatt may not have been instantiated
             BluetoothAdapter adapter = new GattUtils().getBluetoothAdapter(context);
@@ -61,16 +88,16 @@ public class HandleIntentBasedScanResult extends BroadcastReceiver {
             int errorCode = intent.getIntExtra(BluetoothLeScanner.EXTRA_ERROR_CODE, ScanFailedReason.SCAN_SUCCESS_NO_ERROR.getCode());
             if (errorCode == ScanFailedReason.SCAN_SUCCESS_NO_ERROR.getCode()) {
                 // added by the system to the intent defined in {@link OreoBackgroundScanner#explicitIntentHelper}
-                List<ScanResult> results = intent.getParcelableArrayListExtra(BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT);
+                List<ScanResult> results = scanResults(intent);
                 if (results != null && !results.isEmpty()) {
-                    // there are callback results, so now we should do something with this, it's
-                    // not OK to do this on the main thread so we'll jump onto a scheduler
+                    // Already off the receiver thread via goAsync()'s executor. Do not hop
+                    // again through a Handler: the unit-test stub Handler does not dispatch.
                     for(ScanResult result : results) {
-                        FitbitGatt.getInstance().getClientCallback().getClientCallbackHandler().post(() -> {
                             FitbitBluetoothDevice fitBd = new FitbitBluetoothDevice(result.getDevice());
                             fitBd.setScanRecord(result.getScanRecord());
                             fitBd.origin = FitbitBluetoothDevice.DeviceOrigin.SCANNED;
                             fitBd.setRssi(result.getRssi());
+                            fitBd.copyExtendedScanFields(result, FitbitGatt.getInstance().isExtendedScanEnabled());
                             /*
                              * If bitgatt is started, then we need to determine whether we are still
                              * pending intent scanning from a different start and set the correct
@@ -162,7 +189,6 @@ public class HandleIntentBasedScanResult extends BroadcastReceiver {
                                 });
                                 FitbitGatt.getInstance().start(context);
                             }
-                        });
                     }
                 } else {
                     Timber.w("Scan callback with no results");
@@ -170,9 +196,18 @@ public class HandleIntentBasedScanResult extends BroadcastReceiver {
             } else {
                 Timber.v("There was an error in the background scan of ScanCallback.SCAN_FAILED_* const type %s", ScanFailedReason.getReasonForCode(errorCode));
                 Timber.v("The callback type was ScanSettings.CALLBACK_TYPE_* %d", callbackType);
+                FitbitGatt.getInstance().dispatchScanFailure(ScanFailure.getFailureForReason(errorCode));
             }
         } else {
             Timber.v("The intent service was started with a null intent.  We are probably initializing");
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static List<ScanResult> scanResults(Intent intent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return intent.getParcelableArrayListExtra(BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT, ScanResult.class);
+        }
+        return intent.getParcelableArrayListExtra(BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT);
     }
 }

@@ -103,12 +103,18 @@ package com.fitbit.bluetooth.fbgatt {
     method public void addDevicePropertiesChangedListener(com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DevicePropertiesChangedCallback);
     method public boolean equals(Object);
     method public String getAddress();
+    method @Nullable public Integer getAdvertisingSid();
     method public BluetoothDevice getBtDevice();
+    method @Nullable public Integer getDataStatus();
     method public String getName();
     method public com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DeviceOrigin getOrigin();
+    method @Nullable public Integer getPrimaryPhy();
     method public int getRssi();
     method @Nullable public ScanRecord getScanRecord();
+    method @Nullable public Integer getSecondaryPhy();
     method public int hashCode();
+    method @Nullable public Boolean isConnectableAdvertisement();
+    method @Nullable public Boolean isLegacyAdvertisement();
     method public void removeAllDevicePropertiesChangedListeners();
     method public void removeDevicePropertiesChangedListener(com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DevicePropertiesChangedCallback);
     method public void setRssi(int);
@@ -173,6 +179,7 @@ package com.fitbit.bluetooth.fbgatt {
     method public void registerGattEventListener(com.fitbit.bluetooth.fbgatt.FitbitGatt.FitbitGattCallback);
     method public void resetScanFilters();
     method public void setDeviceNameScanFilters(List<String>);
+    method public void setExtendedScanEnabled(boolean);
     method @VisibleForTesting public void setGattServer(com.fitbit.bluetooth.fbgatt.GattServerConnection);
     method public void setScanServiceUuidFilters(List<ParcelUuid>);
     method public void setScannerMockMode(boolean);
@@ -201,6 +208,7 @@ package com.fitbit.bluetooth.fbgatt {
     method public void onFitbitGattStartFailed();
     method public void onPendingIntentScanStarted();
     method public void onPendingIntentScanStopped();
+    method public default void onScanFailed(com.fitbit.bluetooth.fbgatt.ScanFailure);
     method public void onScanStarted();
     method public void onScanStopped();
   }
@@ -474,6 +482,7 @@ package com.fitbit.bluetooth.fbgatt {
   }
 
   public interface ScannerInterface {
+    method public default ScanSettings buildDefaultScanSettings(int);
     method public void cleanup();
     method public void flushPendingScanResults(ScanCallback);
     method public boolean isBluetoothEnabled();
@@ -1192,6 +1201,9 @@ package com.fitbit.bluetooth.fbgatt.util {
     method public String getDevTypeDescription(int);
     method public String getMajDevClassDescription(int);
     method public boolean isPerhipheralCurrentlyConnectedToPhone(@Nullable Context, @Nullable BluetoothDevice);
+    method @Nullable public static String missingAdvertisePermission(@Nullable Context);
+    method @Nullable public static String missingConnectPermission(@Nullable Context);
+    method @Nullable public static String missingScanPermission(@Nullable Context);
     method public String safeGetBtDeviceName(@Nullable BluetoothDevice);
     method public String safeGetBtDeviceName(@Nullable BluetoothGatt);
   }

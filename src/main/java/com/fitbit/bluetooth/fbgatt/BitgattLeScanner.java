@@ -34,6 +34,7 @@ import timber.log.Timber;
 
 class BitgattLeScanner implements ScannerInterface {
 
+    private final @Nullable Context appContext;
     private final @Nullable BluetoothAdapter adapter;
     private final @Nullable BluetoothLeScanner leScanner;
 
@@ -42,6 +43,7 @@ class BitgattLeScanner implements ScannerInterface {
      * @param context The android context
      */
     BitgattLeScanner(@Nullable Context context) {
+        this.appContext = context;
         if(context != null) {
             GattUtils utils = new GattUtils();
             this.adapter = utils.getBluetoothAdapter(context);
@@ -60,6 +62,9 @@ class BitgattLeScanner implements ScannerInterface {
 
     @Override
     public void startScan(ScanCallback callback) {
+        if (!mayScan()) {
+            return;
+        }
         if(leScanner == null) {
             Timber.w("The scanner was null, context or adapter was null");
             return;
@@ -69,6 +74,9 @@ class BitgattLeScanner implements ScannerInterface {
 
     @Override
     public void startScan(List<ScanFilter> filters, ScanSettings settings, ScanCallback callback) {
+        if (!mayScan()) {
+            return;
+        }
         if(leScanner == null) {
             Timber.w("The scanner was null, context or adapter was null");
             return;
@@ -79,11 +87,23 @@ class BitgattLeScanner implements ScannerInterface {
     @TargetApi(Build.VERSION_CODES.O)
     @Override
     public int startScan(@Nullable List<ScanFilter> filters, @Nullable ScanSettings settings, @NonNull PendingIntent callbackIntent) {
+        if (!mayScan()) {
+            return ScanCallback.SCAN_FAILED_INTERNAL_ERROR;
+        }
         if(leScanner == null || !FitbitGatt.atLeastSDK(Build.VERSION_CODES.O)) {
             Timber.w("The scanner was null, context or adapter was null");
             return ScanCallback.SCAN_FAILED_INTERNAL_ERROR;
         }
         return leScanner.startScan(filters, settings, callbackIntent);
+    }
+
+    private boolean mayScan() {
+        String missing = GattUtils.missingScanPermission(appContext);
+        if (missing != null) {
+            Timber.w("Scan refused, missing %s", missing);
+            return false;
+        }
+        return true;
     }
 
     @Override

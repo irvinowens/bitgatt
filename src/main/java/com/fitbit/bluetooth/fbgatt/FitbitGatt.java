@@ -60,8 +60,6 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import timber.log.Timber;
 
-import static com.fitbit.bluetooth.fbgatt.PeripheralScanner.BACKGROUND_SCAN_REQUEST_CODE;
-import static com.fitbit.bluetooth.fbgatt.PeripheralScanner.scanPendingIntentFlags;
 
 /**
  * The gatt interface, will pass a connection object to a caller with a reference to this instance
@@ -124,6 +122,7 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
     private BluetoothRadioStatusListener radioStatusListener;
     @VisibleForTesting
     volatile boolean isBluetoothOn;
+    private boolean extendedScanEnabled;
 
     /**
      * Will get the instance of the singleton FitbitGatt manager class
@@ -306,6 +305,12 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
          */
         @MainThread
         void onBluetoothTurningOff();
+
+        /**
+         * Platform scan failures 5 (out of hardware resources) and 6 (scanning too frequently).
+         */
+        default void onScanFailed(ScanFailure failure) {
+        }
     }
 
     @VisibleForTesting
@@ -376,6 +381,27 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
      * @param context The android context for providing to the scanner
      * @return True if the scan started, false if it did not
      */
+
+    /**
+     * Off by default. When enabled, scans request non-legacy advertisements on 1M and coded PHY,
+     * and on API 37 also HDT when the controller supports it. Discovery is unchanged while this is off.
+     */
+    public void setExtendedScanEnabled(boolean enabled) {
+        this.extendedScanEnabled = enabled;
+        if (peripheralScanner != null) {
+            peripheralScanner.setExtendedScanEnabled(enabled);
+        }
+    }
+
+    boolean isExtendedScanEnabled() {
+        return extendedScanEnabled;
+    }
+
+    void dispatchScanFailure(ScanFailure failure) {
+        for (FitbitGattCallback callback : overallGattEventListeners) {
+            callback.onScanFailed(failure);
+        }
+    }
 
     public boolean startHighPriorityScan(Context context) {
         if (alwaysConnectedScanner.isAlwaysConnectedScannerEnabled()) {
@@ -817,6 +843,7 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
         this.aclListener.register(this.appContext);
         connectionCleanup = new Handler(context.getMainLooper());
         this.peripheralScanner = new PeripheralScanner(context, this);
+        this.peripheralScanner.setExtendedScanEnabled(extendedScanEnabled);
         // we can initialize this value here and guard the scanner and the gatt
         // server this way
         BluetoothAdapter adapter = new GattUtils().getBluetoothAdapter(context);
@@ -1286,6 +1313,12 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
              * application's data in the application list with system apps shown.  The gatt
              * cache is probably corrupt
              */
+            String missingConnect = GattUtils.missingConnectPermission(context);
+            if (missingConnect != null) {
+                Timber.w("openGattServer refused, missing %s", missingConnect);
+                callback.onGattServerStatus(false);
+                return;
+            }
             fitbitGattAsyncOperationHandler.postDelayed(() -> {
                 for (int openServerRetryCount = 0; openServerRetryCount < OPEN_GATT_SERVER_RETRY_COUNT; openServerRetryCount++) {
                     // the bluetooth team at Google recommended that we check to see if BT is off
@@ -1503,8 +1536,7 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
         } else {
             PendingIntent pending;
             try {
-                pending = PendingIntent.getBroadcast(context,
-                    BACKGROUND_SCAN_REQUEST_CODE, regularIntent, scanPendingIntentFlags());
+                pending = ScanIntents.getBroadcast(context, regularIntent);
             } catch (NoSuchMethodError error) {
                 Timber.i(error, "There was a no such method error stopping the pending intent scan, assuming stopped");
                 return;
