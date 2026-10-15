@@ -11,6 +11,10 @@ plugins {
     id 'maven-publish'
 }
 
+configurations {
+    metalava
+}
+
 def packageName = 'com.fitbit.bluetooth.fbgatt'
 
 def buildNumber = System.getenv("BUILD_NUMBER") != null ? System.getenv("BUILD_NUMBER").toInteger() : 10000
@@ -82,6 +86,7 @@ dependencies {
     implementation "com.jakewharton.timber:timber:$TIMBER_VERSION"
     implementation "com.facebook.stetho:stetho:$STETHO_VERSION"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$COROUTINES_VERSION"
+    metalava 'com.android.tools.metalava:metalava:1.0.0-alpha16'
     testImplementation "junit:junit:$JUNIT_VERSION"
     testImplementation "androidx.test:core:$TEST_CORE_VERSION"
     testImplementation "androidx.test:runner:$TEST_RUNNER_VERSION"
@@ -104,6 +109,83 @@ dependencies {
     }
     androidTestImplementation "net.bytebuddy:byte-buddy:$BYTE_BUDDY_VERSION"
     androidTestImplementation "net.bytebuddy:byte-buddy-agent:$BYTE_BUDDY_VERSION"
+}
+
+def publicApiFile = layout.projectDirectory.file('api/public-api.txt')
+
+def metalavaClasspath = {
+    tasks.named('compileDebugJavaWithJavac', JavaCompile).get().classpath.files.findAll { file ->
+        file.isDirectory() || file.name.endsWith('.jar')
+    }.collect { it.absolutePath }.join(File.pathSeparator)
+}
+
+tasks.register('updatePublicApi', JavaExec) {
+    group = 'verification'
+    description = 'Write the current public API signature to api/public-api.txt'
+    dependsOn 'compileDebugJavaWithJavac'
+    classpath = configurations.metalava
+    mainClass = 'com.android.tools.metalava.Driver'
+    def output = publicApiFile.asFile
+    inputs.dir 'src/main/java'
+    outputs.file output
+    doFirst {
+        output.parentFile.mkdirs()
+        args 'main',
+            '--source-path', file('src/main/java').absolutePath,
+            '--classpath', metalavaClasspath(),
+            '--format', '2.0:strip-java-lang-prefix=never',
+            '--api', output.absolutePath,
+            '--hide', 'HiddenSuperclass',
+            '--hide', 'UnresolvedImport',
+            '--hide', 'ReferencesHidden',
+            '--hide', 'HiddenTypeParameter',
+            '--hide', 'DeprecationMismatch'
+    }
+}
+
+def publicApiSnapshot = layout.buildDirectory.file('metalava/public-api.txt')
+
+tasks.register('snapshotPublicApi', JavaExec) {
+    description = 'Write the current public API signature to the build directory'
+    dependsOn 'compileDebugJavaWithJavac'
+    classpath = configurations.metalava
+    mainClass = 'com.android.tools.metalava.Driver'
+    def output = publicApiSnapshot.get().asFile
+    inputs.dir 'src/main/java'
+    outputs.file output
+    doFirst {
+        output.parentFile.mkdirs()
+        args 'main',
+            '--source-path', file('src/main/java').absolutePath,
+            '--classpath', metalavaClasspath(),
+            '--format', '2.0:strip-java-lang-prefix=never',
+            '--api', output.absolutePath,
+            '--hide', 'HiddenSuperclass',
+            '--hide', 'UnresolvedImport',
+            '--hide', 'ReferencesHidden',
+            '--hide', 'HiddenTypeParameter',
+            '--hide', 'DeprecationMismatch'
+    }
+}
+
+tasks.register('checkPublicApi') {
+    group = 'verification'
+    description = 'Fail if the public API differs from api/public-api.txt'
+    dependsOn 'snapshotPublicApi'
+    def expected = publicApiFile
+    def actual = publicApiSnapshot
+    inputs.file expected
+    doLast {
+        def expectedText = expected.asFile.getText('UTF-8')
+        def actualText = actual.get().asFile.getText('UTF-8')
+        if (expectedText != actualText) {
+            throw new GradleException('Public API differs from api/public-api.txt. Review the change and run updatePublicApi.')
+        }
+    }
+}
+
+tasks.named('check').configure {
+    dependsOn 'checkPublicApi'
 }
 
 tasks.register('sourceJar', Jar) {
