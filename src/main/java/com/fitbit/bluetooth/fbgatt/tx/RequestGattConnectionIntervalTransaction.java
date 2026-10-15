@@ -83,30 +83,36 @@ public class RequestGattConnectionIntervalTransaction extends GattTransaction {
                 getConnection().setState(GattState.REQUEST_CONNECTION_INTERVAL_FAILURE);
                 builder.responseStatus(GattStatus.GATT_NO_RESOURCES.getCode());
                 builder.gattState(getConnection().getGattState());
-                mainThreadHandler.post(() -> {
-                    callCallbackWithTransactionResultAndRelease(callback, builder.build());
-                    // even if we can't change the interval, we can still use the connection
-                    getConnection().setState(GattState.IDLE);
-                });
+                finishIntervalRequest(callback, builder.build());
             } else {
                 getConnection().setState(GattState.REQUEST_CONNECTION_INTERVAL_SUCCESS);
                 builder.gattState(getConnection().getGattState());
                 builder.resultStatus(TransactionResult.TransactionResultStatus.SUCCESS);
-                mainThreadHandler.post(() -> {
-                    callCallbackWithTransactionResultAndRelease(callback, builder.build());
-                    // we were able to send the request, so we good.
-                    getConnection().setState(GattState.IDLE);
-                });
+                finishIntervalRequest(callback, builder.build());
             }
         } else {
             getConnection().setState(GattState.REQUEST_CONNECTION_INTERVAL_FAILURE);
             builder.responseStatus(GattStatus.GATT_NO_RESOURCES.getCode());
             builder.gattState(getConnection().getGattState());
-            mainThreadHandler.post(() -> {
-                callCallbackWithTransactionResultAndRelease(callback, builder.build());
-                // even if we can't change the interval, we can still use the connection
-                getConnection().setState(GattState.IDLE);
-            });
+            finishIntervalRequest(callback, builder.build());
+        }
+    }
+
+    /**
+     * The boolean from {@code requestConnectionPriority} is the result. A later connection-parameter
+     * update is only an event and must not be required before this returns to {@link GattState#IDLE}.
+     */
+    private void finishIntervalRequest(GattTransactionCallback callback, TransactionResult result) {
+        Runnable finish = () -> {
+            callCallbackWithTransactionResultAndRelease(callback, result);
+            getConnection().setState(GattState.IDLE);
+        };
+        try {
+            if (!mainThreadHandler.post(finish)) {
+                finish.run();
+            }
+        } catch (RuntimeException ignored) {
+            finish.run();
         }
     }
 

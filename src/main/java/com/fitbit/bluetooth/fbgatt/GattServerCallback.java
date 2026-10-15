@@ -88,6 +88,16 @@ class GattServerCallback extends BluetoothGattServerCallback {
         return this.handler;
     }
 
+    private void deliver(Runnable action) {
+        try {
+            if (!handler.post(action)) {
+                action.run();
+            }
+        } catch (RuntimeException ex) {
+            action.run();
+        }
+    }
+
     @Override
     public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
         super.onConnectionStateChange(device, status, newState);
@@ -376,8 +386,20 @@ class GattServerCallback extends BluetoothGattServerCallback {
         ArrayList<GattServerListener> copy = new ArrayList<>(listeners.size());
         copy.addAll(listeners);
         for (GattServerListener listener : copy) {
-            handler.post(() -> listener.onServerExecuteWrite(device, requestId, execute));
+            deliver(() -> listener.onServerExecuteWrite(device, requestId, execute));
         }
+        GattServerConnection conn = FitbitGatt.getInstance().getServer();
+        if (conn == null || !copy.isEmpty()) {
+            return;
+        }
+        Timber.e("[%s] You must listen and respond to execute write, responding with error.", getDeviceMacFromDevice(device));
+        deliver(() -> {
+            try {
+                conn.getServer().sendResponse(device, requestId, GattStatus.GATT_ERROR.getCode(), 0, new byte[0]);
+            } catch (NullPointerException e) {
+                Timber.w(e, "[%s] Looks like BluetoothGattServer#sendResponse(...) can run into the unboxing bug also.  No response sent, peripheral may disconnect.", getDeviceMacFromDevice(device));
+            }
+        });
     }
 
     @Override
@@ -388,7 +410,7 @@ class GattServerCallback extends BluetoothGattServerCallback {
         ArrayList<GattServerListener> copy = new ArrayList<>(listeners.size());
         copy.addAll(listeners);
         for (GattServerListener listener : copy) {
-            handler.post(() -> listener.onServerNotificationSent(device, GattStatus.getStatusForCode(status).ordinal()));
+            deliver(() -> listener.onServerNotificationSent(device, status));
         }
     }
 

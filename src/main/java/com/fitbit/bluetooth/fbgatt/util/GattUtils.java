@@ -112,16 +112,16 @@ public class GattUtils {
         BluetoothGattDescriptorCopy newDescriptor =
                 new BluetoothGattDescriptorCopy(UUID.fromString(descriptor.getUuid().toString()),
                         descriptor.getPermissions());
-        if (newDescriptor.getValue() != null) {
-            newDescriptor.setValue(Arrays.copyOf(descriptor.getValue(), descriptor.getValue().length));
+        byte[] sourceValue = descriptor.getValue();
+        if (sourceValue != null) {
+            newDescriptor.setValue(Arrays.copyOf(sourceValue, sourceValue.length));
         }
-        if (newDescriptor.getCharacteristic() != null) {
-            BluetoothGattCharacteristicCopy oldCharacteristic = newDescriptor.getCharacteristic();
-            BluetoothGattCharacteristicCopy copyOfCharacteristic = new BluetoothGattCharacteristicCopy(UUID.fromString(oldCharacteristic.getUuid().toString()), oldCharacteristic.getProperties(), oldCharacteristic.getPermissions());
-            if (oldCharacteristic.getValue() != null) {
-                copyOfCharacteristic.setValue(Arrays.copyOf(oldCharacteristic.getValue(), oldCharacteristic.getValue().length));
+        BluetoothGattCharacteristic parent = descriptor.getCharacteristic();
+        if (parent != null && parent.getUuid() != null) {
+            BluetoothGattCharacteristicCopy copyOfCharacteristic = new BluetoothGattCharacteristicCopy(UUID.fromString(parent.getUuid().toString()), parent.getProperties(), parent.getPermissions());
+            if (parent.getValue() != null) {
+                copyOfCharacteristic.setValue(Arrays.copyOf(parent.getValue(), parent.getValue().length));
             }
-
             copyOfCharacteristic.addDescriptor(newDescriptor);
         }
         return newDescriptor;

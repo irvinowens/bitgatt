@@ -16,7 +16,8 @@ public class CharacteristicNotificationDescriptor extends BluetoothGattDescripto
 
     private static final UUID notificationDescriptorTwentyNineOhTwo = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     /**
-     * Will create a 0x2902 characteristic descriptor
+     * Will create a 0x2902 client characteristic configuration descriptor.
+     * The server add-characteristic transaction attaches this only for notify or indicate.
      */
     public CharacteristicNotificationDescriptor() {
         super(notificationDescriptorTwentyNineOhTwo, BluetoothGattDescriptor.PERMISSION_READ |

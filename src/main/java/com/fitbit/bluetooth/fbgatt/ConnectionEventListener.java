@@ -53,4 +53,15 @@ public interface ConnectionEventListener {
      * @param connection The {@link GattConnection} for which this event originated
      */
     void onPhyChanged(@NonNull TransactionResult result, @NonNull GattConnection connection);
+
+    /**
+     * Connection parameters were updated. This event does not complete a connection-interval
+     * transaction and does not enqueue another transaction. That transaction already finished
+     * when {@code requestConnectionPriority} returned.
+     *
+     * @param result The {@link TransactionResult} mapping to this event
+     * @param connection The {@link GattConnection} for which this event originated
+     */
+    default void onConnectionUpdated(@NonNull TransactionResult result, @NonNull GattConnection connection) {
+    }
 }

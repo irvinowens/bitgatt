@@ -14,8 +14,6 @@ import com.fitbit.bluetooth.fbgatt.GattState;
 import com.fitbit.bluetooth.fbgatt.GattTransaction;
 import com.fitbit.bluetooth.fbgatt.GattTransactionCallback;
 import com.fitbit.bluetooth.fbgatt.TransactionResult;
-import com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason;
-
 import android.bluetooth.BluetoothGatt;
 import androidx.annotation.Nullable;
 
@@ -76,7 +74,7 @@ public class RequestMtuGattTransaction extends GattTransaction {
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         TransactionResult.Builder builder = new TransactionResult.Builder().transactionName(getName());
-        builder.responseStatus(GattDisconnectReason.getReasonForCode(status).ordinal());
+        builder.responseStatus(status);
         if(status == BluetoothGatt.GATT_SUCCESS) {
             getConnection().setState(GattState.REQUEST_MTU_SUCCESS);
             builder.resultStatus(TransactionResult.TransactionResultStatus.SUCCESS)

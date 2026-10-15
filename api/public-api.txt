@@ -92,6 +92,7 @@ package com.fitbit.bluetooth.fbgatt {
   public interface ConnectionEventListener {
     method public void onClientCharacteristicChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
     method public void onClientConnectionStateChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public default void onConnectionUpdated(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
     method public void onMtuChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
     method public void onPhyChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
     method public void onServicesDiscovered(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
@@ -215,10 +216,14 @@ package com.fitbit.bluetooth.fbgatt {
 
   public class GattClientCallback {
     method public void onCharacteristicChanged(BluetoothGatt, BluetoothGattCharacteristic);
+    method public void onCharacteristicChanged(BluetoothGatt, BluetoothGattCharacteristic, byte[]);
+    method public void onCharacteristicRead(BluetoothGatt, BluetoothGattCharacteristic, byte[], int);
     method public void onCharacteristicRead(BluetoothGatt, BluetoothGattCharacteristic, int);
     method public void onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int);
     method public void onConnectionStateChange(BluetoothGatt, int, int);
+    method public void onConnectionUpdated(BluetoothGatt, int, int, int, int);
     method public void onDescriptorRead(BluetoothGatt, BluetoothGattDescriptor, int);
+    method public void onDescriptorRead(BluetoothGatt, BluetoothGattDescriptor, int, byte[]);
     method public void onDescriptorWrite(BluetoothGatt, BluetoothGattDescriptor, int);
     method public void onMtuChanged(BluetoothGatt, int, int);
     method public void onPhyRead(BluetoothGatt, int, int, int);

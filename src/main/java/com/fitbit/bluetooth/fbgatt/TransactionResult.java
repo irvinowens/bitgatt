@@ -332,11 +332,12 @@ public class TransactionResult {
 
     /**
      * Will return the response code string from a {@link GattStatus} if contained in this
-     * transaction response
-     * @return The gatt status enum for the ordinal
+     * transaction response. The stored value is the raw ATT status, including {@code 0} for
+     * success, not an enum ordinal.
+     * @return The gatt status name for that code, or {@code GATT_UNKNOWN} when the code is not listed
      */
     public String getResponseCodeString(){
-        return GattStatus.values()[this.responseStatus].name();
+        return GattStatus.getStatusForCode(this.responseStatus).name();
     }
 
     /**

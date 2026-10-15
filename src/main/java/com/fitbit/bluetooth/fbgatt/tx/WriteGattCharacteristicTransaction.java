@@ -16,10 +16,11 @@ import com.fitbit.bluetooth.fbgatt.Situation;
 import com.fitbit.bluetooth.fbgatt.TransactionResult;
 import com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy;
 import com.fitbit.bluetooth.fbgatt.strategies.Strategy;
-import com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason;
+import com.fitbit.bluetooth.fbgatt.FitbitGatt;
 
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.os.Build;
 import androidx.annotation.Nullable;
 
 import timber.log.Timber;
@@ -55,7 +56,13 @@ public class WriteGattCharacteristicTransaction extends GattTransaction {
         BluetoothGatt localGatt = getConnection().getGatt();
         if(localGatt != null) {
             try {
-                success = localGatt.writeCharacteristic(characteristic);
+                if (FitbitGatt.atLeastSDK(Build.VERSION_CODES.TIRAMISU)) {
+                    byte[] value = characteristic.getValue();
+                    int writeType = characteristic.getWriteType();
+                    success = localGatt.writeCharacteristic(characteristic, value, writeType) == BluetoothGatt.GATT_SUCCESS;
+                } else {
+                    success = localGatt.writeCharacteristic(characteristic);
+                }
             } catch (NullPointerException ex) {
                 Timber.w(ex, "[%s] We are going to fail this tx due to the stack NPE, this is probably poor peripheral behavior, this should become a FW bug.", getDevice());
                 if (getDevice() != null) {
@@ -92,7 +99,7 @@ public class WriteGattCharacteristicTransaction extends GattTransaction {
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristicCopy characteristic, int status) {
         TransactionResult.Builder builder = new TransactionResult.Builder().transactionName(getName());
-        builder.responseStatus(GattDisconnectReason.getReasonForCode(status).ordinal());
+        builder.responseStatus(status);
         if (status == BluetoothGatt.GATT_SUCCESS) {
             getConnection().setState(GattState.WRITE_CHARACTERISTIC_SUCCESS);
             builder.data(characteristic.getValue())

@@ -15,9 +15,12 @@ import com.fitbit.bluetooth.fbgatt.util.GattUtils;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattConnectionSettings;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
+import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -30,6 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 import timber.log.Timber;
@@ -45,6 +50,16 @@ import static com.fitbit.bluetooth.fbgatt.FitbitGatt.atLeastSDK;
  */
 
 public class GattConnection implements Closeable {
+    /**
+     * API 37 delivers {@link BluetoothGattCallback} on this executor. It is not the main looper.
+     * Transaction results still hop to the main looper from {@code runTx}.
+     */
+    private static final Executor DIRECT_CONNECT_EXECUTOR = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "BitGatt connectGatt");
+        thread.setDaemon(true);
+        return thread;
+    });
+
     private AtomicLong disconnectedTTL;
     private FitbitBluetoothDevice device;
     private @Nullable volatile BluetoothGatt gatt;
@@ -196,8 +211,29 @@ public class GattConnection implements Closeable {
      */
 
     public synchronized void setState(GattState state) {
-        Timber.v("[%s] Transitioning from state %s to state %s", getDevice(), this.state.name(), state.name());
+        GattState previous = this.state;
+        Timber.v("[%s] Transitioning from state %s to state %s", getDevice(), previous.name(), state.name());
         this.state = state;
+        if (state == GattState.CONNECTING || previous == GattState.CONNECTING) {
+            tellScannerAboutConnecting();
+        }
+    }
+
+    private void tellScannerAboutConnecting() {
+        PeripheralScanner scanner = FitbitGatt.getInstance().getPeripheralScanner();
+        if (scanner == null) {
+            return;
+        }
+        boolean connecting = this.state == GattState.CONNECTING;
+        if (!connecting) {
+            for (GattConnection connection : FitbitGatt.getInstance().getConnectionMap().values()) {
+                if (connection != null && connection.getGattState() == GattState.CONNECTING) {
+                    connecting = true;
+                    break;
+                }
+            }
+        }
+        scanner.setDeferScanWhileConnecting(connecting);
     }
 
     /**
@@ -405,18 +441,39 @@ public class GattConnection implements Closeable {
             setState(GattState.FAILURE_CONNECTING);
             return false;
         }
-        if (atLeastSDK(Build.VERSION_CODES.M)) {
-            gatt = device.getBtDevice().connectGatt(FitbitGatt.getInstance().getAppContext(), false, FitbitGatt.getInstance().getClientCallback(), BluetoothDevice.TRANSPORT_LE);
-        } else {
-            gatt = device.getBtDevice().connectGatt(FitbitGatt.getInstance().getAppContext(), false, FitbitGatt.getInstance().getClientCallback());
-        }
+        setState(GattState.CONNECTING);
+        gatt = openDirectGatt(device);
         if (gatt == null) {
             setState(GattState.FAILURE_CONNECTING);
             return false;
-        } else {
-            setState(GattState.CONNECTING);
-            return true;
         }
+        return true;
+    }
+
+    /**
+     * Direct connect ({@code autoConnect} false) on every API. API 37 uses the settings overload
+     * and a non-main executor. The PHY mask on API 26–36 is the platform default, {@code PHY_LE_1M_MASK}.
+     * API 37's settings type has no PHY override, so the controller keeps that same default.
+     */
+    private BluetoothGatt openDirectGatt(FitbitBluetoothDevice device) {
+        Context context = FitbitGatt.getInstance().getAppContext();
+        BluetoothGattCallback callback = FitbitGatt.getInstance().getClientCallback();
+        BluetoothDevice remote = device.getBtDevice();
+        int sdk = Build.VERSION.SDK_INT;
+        if (sdk >= Build.VERSION_CODES.CINNAMON_BUN) {
+            BluetoothGattConnectionSettings settings = new BluetoothGattConnectionSettings.Builder()
+                    .setAutoConnectEnabled(false)
+                    .setTransport(BluetoothDevice.TRANSPORT_LE)
+                    .build();
+            return remote.connectGatt(settings, DIRECT_CONNECT_EXECUTOR, callback);
+        }
+        if (sdk >= Build.VERSION_CODES.O) {
+            return remote.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE, BluetoothDevice.PHY_LE_1M_MASK);
+        }
+        if (sdk >= Build.VERSION_CODES.M) {
+            return remote.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE);
+        }
+        return remote.connectGatt(context, false, callback);
     }
 
     private void mockConnect() {

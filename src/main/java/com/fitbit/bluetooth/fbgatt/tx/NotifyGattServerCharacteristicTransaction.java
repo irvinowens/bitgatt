@@ -16,12 +16,13 @@ import com.fitbit.bluetooth.fbgatt.GattTransactionCallback;
 import com.fitbit.bluetooth.fbgatt.Situation;
 import com.fitbit.bluetooth.fbgatt.TransactionResult;
 import com.fitbit.bluetooth.fbgatt.strategies.Strategy;
-import com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason;
+import com.fitbit.bluetooth.fbgatt.FitbitGatt;
 import com.fitbit.bluetooth.fbgatt.util.GattStatus;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.os.Build;
 
 import timber.log.Timber;
 
@@ -57,7 +58,13 @@ public class NotifyGattServerCharacteristicTransaction extends GattServerTransac
         getGattServer().setState(GattState.NOTIFYING_CHARACTERISTIC);
         boolean success;
         try {
-            success = getGattServer().getServer().notifyCharacteristicChanged(device.getBtDevice(), this.characteristic, this.confirm);
+            if (FitbitGatt.atLeastSDK(Build.VERSION_CODES.TIRAMISU)) {
+                byte[] value = this.characteristic.getValue();
+                success = getGattServer().getServer().notifyCharacteristicChanged(
+                        device.getBtDevice(), this.characteristic, this.confirm, value) == BluetoothGatt.GATT_SUCCESS;
+            } else {
+                success = getGattServer().getServer().notifyCharacteristicChanged(device.getBtDevice(), this.characteristic, this.confirm);
+            }
         } catch (NullPointerException ex) {
             Timber.w(ex,"[%s] We are going to fail this tx due to the stack NPE, this is probably poor peripheral behavior, this should become a FW bug.", getDevice());
             Timber.w("[%s] btDevice %s characteristic %s confirm %s", device, device.getBtDevice(), this.characteristic, this.confirm);
@@ -88,9 +95,9 @@ public class NotifyGattServerCharacteristicTransaction extends GattServerTransac
 
     @Override
     public void onServerNotificationSent(BluetoothDevice device, int status) {
-        Timber.d("[%s] Notification sent response with status: %s", getDevice(), GattStatus.values()[status].name());
+        Timber.d("[%s] Notification sent response with status: %s", getDevice(), GattStatus.getStatusForCode(status));
         TransactionResult.Builder builder = new TransactionResult.Builder().transactionName(getName());
-        builder.responseStatus(GattDisconnectReason.getReasonForCode(status).ordinal());
+        builder.responseStatus(status);
         if(this.characteristic != null) {
             builder.characteristicUuid(this.characteristic.getUuid());
             builder.data(this.characteristic.getValue());
