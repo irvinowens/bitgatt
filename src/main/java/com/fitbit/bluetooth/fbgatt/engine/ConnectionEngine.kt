@@ -158,6 +158,17 @@ class ConnectionEngine(private val threadName: String) {
          */
         @JvmStatic
         fun deliverOnMainLooper(looper: Looper?, handler: Handler?, action: Runnable) {
+            val alreadyOnTarget = try {
+                looper?.thread === Thread.currentThread()
+            } catch (ignored: RuntimeException) {
+                false
+            }
+            // A mock that sets the connection state after it invokes the callback must still
+            // be observed by that callback. Posting would run only after that state change.
+            if (alreadyOnTarget) {
+                action.run()
+                return
+            }
             var posted = false
             try {
                 if (handler != null) {

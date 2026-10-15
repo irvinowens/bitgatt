@@ -1045,9 +1045,9 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
 
     @TargetApi(24)
     protected fun getAdapter(context: Context?): BluetoothAdapter? {
-        if (atLeastSDK(Build.VERSION_CODES.M)) {
-            val manager = context!!.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager?
-            return manager!!.adapter
+        if (atLeastSDK(Build.VERSION_CODES.M) && context != null) {
+            val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager?
+            return manager?.adapter
         }
         return BluetoothAdapter.getDefaultAdapter()
     }
