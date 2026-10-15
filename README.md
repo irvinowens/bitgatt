@@ -53,8 +53,16 @@ abstraction on top of the Android Low Energy API : [eng.fitbit.com/what-is-bitga
 
 ### Getting Started
 
-To use Bitgatt, you will need to add the permission for bluetooth ( and maybe admin ) into your
-manifest.  After that, you will need to provide the services that you wish to add to the gatt server
+The library manifest declares `BLUETOOTH_SCAN` with `android:usesPermissionFlags="neverForLocation"`,
+`BLUETOOTH_CONNECT`, and `BLUETOOTH_ADVERTISE`. `BLUETOOTH`, `BLUETOOTH_ADMIN`, `ACCESS_FINE_LOCATION`,
+and `ACCESS_COARSE_LOCATION` stay, capped at `maxSdkVersion` 30. The library scans to find peripherals
+and does not derive a location. A host that does derive location has to override `neverForLocation`
+and declare the location permission itself. `neverForLocation` can also filter some beacons out of
+scan results. The library does not call `requestPermissions`; the host app does.
+
+This library's `targetSdk` is 37. Merging it can raise the host app's merged target SDK.
+
+After the manifest merge, provide the services that you wish to add to the gatt server
 to the start call, alongside any filters you wish to add to the periodical scan if any.
 
 This will call back once all of the services are added, and the scanner is set up.  If you do not
@@ -310,7 +318,7 @@ class Test {
         FitbitGatt gatt = FitbitGatt.getInstance();
         gatt.start(this); // start is idempotent
         gatt.registerGattEventListener(mylistener);  // also idempotent for adding instances
-        gatt.addScanServiceUUIDWithMaskFilter(ParcelUuid.fromString("ABCDEFGH-6E7D-4601-BDA2-BFFAA68956BA"), null);
+        gatt.addScanServiceUUIDWithMaskFilter(ParcelUuid.fromString("ADABFB00-6E7D-4601-BDA2-BFFAA68956BA"), null);
         boolean success = gatt.startPeriodicScan(this);
         if(!success) {
             Timber.v("The scan didn't start, oh noes!!!!");
@@ -326,7 +334,7 @@ class Test {
         FitbitGatt gatt = FitbitGatt.getInstance();
         gatt.start(this); // start is idempotent
         gatt.registerGattEventListener(mylistener); // also idempotent for adding instances
-        gatt.addScanServiceUUIDWithMaskFilter(ParcelUuid.fromString("ABCDEFGH-6E7D-4601-BDA2-BFFAA68956BA"), null);
+        gatt.addScanServiceUUIDWithMaskFilter(ParcelUuid.fromString("ADABFB00-6E7D-4601-BDA2-BFFAA68956BA"), null);
         boolean success = gatt.startHighPriorityScan(this);
         if(!success) {
             Timber.v("The scan didn't start, oh noes!!!!");
@@ -342,13 +350,29 @@ class Test {
         FitbitGatt gatt = FitbitGatt.getInstance();
         gatt.start(this); // start is idempotent
         gatt.registerGattEventListener(mylistener); // also idempotent for adding instances
-        gatt.addScanServiceUUIDWithMaskFilter(ParcelUuid.fromString("ABCDEFGH-6E7D-4601-BDA2-BFFAA68956BA"), null);
+        gatt.addScanServiceUUIDWithMaskFilter(ParcelUuid.fromString("ADABFB00-6E7D-4601-BDA2-BFFAA68956BA"), null);
         ArrayList<ScanFilter> scanFilters = new ArrayList<>();
         scanFilters.add(new ScanFilter.Builder().setDeviceName("Flex").build());
         boolean success = gatt.startSystemManagedPendingIntentScan(this, scanFilters);
         if(!success) {
             Timber.v("The scan didn't start, oh noes!!!!");
         }
+    }
+}
+```
+Advertising is explicit. `start` and Bluetooth turning back on do not advertise. A connectable
+request waits until the GATT server is idle and already hosting the services. Call `stop` to
+leave the air; nothing resumes it for you.
+```java
+class Test {
+    public void doAdvertise() {
+        FitbitGatt gatt = FitbitGatt.getInstance();
+        gatt.start(this);
+        AdvertiseError error = gatt.getAdvertiser().start(new AdvertiseRequest());
+        if (error != null) {
+            Timber.v("Advertise refused: %s", error);
+        }
+        gatt.getAdvertiser().stop();
     }
 }
 ```
@@ -370,6 +394,12 @@ your users' phone.  Bitgatt will prevent you from using more than one additional
 if you only used a single gatt_if.
 
 If you do not know what a gatt_if is, it is advisable to use the periodical scanner instead.
+
+The periodical scanner is an app timer, not Core Spec periodic advertising. It scans for
+`SCAN_DURATION` (120s), then sleeps `SCAN_INTERVAL` (240s). After an empty result the sleep
+shifts, capped at `MAX_BACKOFF_MULTIPLIER` 2, so the longest sleep is 480s. A newly seen
+address resets that backoff. The scanner also refuses a fifth start inside 30s (4 starts
+are allowed in that window).
 
 ## [Always Connected Scanner](#always-connected-scanner)
 
@@ -578,9 +608,10 @@ All transactions have a default timeout of 60s but some are special and will be 
 will callback on the main thread with varying properties contained within the TransactionResult
 instance provided to the GattClient or GattServerCallback.
 
-On transaction timeout, the gatt state will be left in whatever in-progress state it was in when
-the transaction timed out, this will leave the gatt in an error state and no other transactions will
-be able to be run until the state is explicitly reset.  A timeout response will be delivered.
+On transaction timeout, the callback is `TIMEOUT` and the gatt state is not changed. The next
+transaction still runs. A timeout does not stick. An asynchronous failure that leaves a failure
+state, and does not then return to `IDLE`, still rejects the next ordinary transaction until
+`SetClientConnectionStateTransaction` or `SetServerConnectionStateTransaction` resets it.
 
 Where possible transactions will return enum values for the GATT status that correspond to the particular
 GATT error that occurred instead of just simple error codes.
