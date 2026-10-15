@@ -6,20 +6,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-buildscript {
-    repositories {
-        google()
-        jcenter()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.0'
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.8.1"
-    }
+plugins {
+    id 'com.android.library' version '9.1.1'
+    id 'maven-publish'
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'com.jfrog.artifactory'
-apply plugin: 'maven-publish'
 
 def packageName = 'com.fitbit.bluetooth.fbgatt'
 
@@ -27,46 +17,45 @@ def buildNumber = System.getenv("BUILD_NUMBER") != null ? System.getenv("BUILD_N
 def libraryVersionName = sprintf("0.8.0", buildNumber)
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.2"
+    namespace = 'com.fitbit.bluetooth.fbgatt'
+    compileSdk = 37
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 29
-        versionCode buildNumber
-        versionName libraryVersionName
-        multiDexEnabled true
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        minSdk = 21
+        targetSdk = 37
+        versionCode = buildNumber
+        versionName = libraryVersionName
+        multiDexEnabled = true
+        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled = false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            testCoverageEnabled true
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
         }
         library {
-            debuggable true
-            minifyEnabled false
-            testCoverageEnabled false
+            debuggable = true
+            minifyEnabled = false
+            enableUnitTestCoverage = false
+            enableAndroidTestCoverage = false
         }
     }
     testOptions {
         unitTests.returnDefaultValues = true
-    }
-}
-
-allprojects {
-    repositories {
-        jcenter()
-        google()
     }
 }
 
@@ -75,75 +64,98 @@ ext {
     APP_COMPAT_VERSION = '1.1.0'
     TIMBER_VERSION = '4.7.1'
     JUNIT_VERSION = '4.12'
-    TEST_RUNNER_VERSION = '1.1.0'
+    TEST_RUNNER_VERSION = '1.4.0'
+    TEST_RULES_VERSION = '1.4.0'
+    TEST_CORE_VERSION = '1.4.0'
+    TEST_EXT_JUNIT_VERSION = '1.1.3'
+    ESPRESSO_VERSION = '3.4.0'
     MOCKITO_VERSION = '2.19.1'
+    BYTE_BUDDY_VERSION = '1.14.19'
     STETHO_VERSION = '1.5.1'
+    COROUTINES_VERSION = '1.10.2'
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestImplementation("com.android.support.test.espresso:espresso-core:3.0.1", {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
     implementation "androidx.multidex:multidex:$MULTIDEX_VERSION"
     implementation "androidx.appcompat:appcompat:$APP_COMPAT_VERSION"
     implementation "com.jakewharton.timber:timber:$TIMBER_VERSION"
     implementation "com.facebook.stetho:stetho:$STETHO_VERSION"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$COROUTINES_VERSION"
     testImplementation "junit:junit:$JUNIT_VERSION"
+    testImplementation "androidx.test:core:$TEST_CORE_VERSION"
     testImplementation "androidx.test:runner:$TEST_RUNNER_VERSION"
-    testImplementation "androidx.test:rules:$TEST_RUNNER_VERSION"
+    testImplementation "androidx.test:rules:$TEST_RULES_VERSION"
+    testImplementation "androidx.test.ext:junit:$TEST_EXT_JUNIT_VERSION"
     testImplementation "org.mockito:mockito-inline:$MOCKITO_VERSION"
     testImplementation "org.mockito:mockito-core:$MOCKITO_VERSION"
+    testImplementation "net.bytebuddy:byte-buddy:$BYTE_BUDDY_VERSION"
+    testImplementation "net.bytebuddy:byte-buddy-agent:$BYTE_BUDDY_VERSION"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$ESPRESSO_VERSION"
     androidTestImplementation "junit:junit:$JUNIT_VERSION"
+    androidTestImplementation "androidx.test:core:$TEST_CORE_VERSION"
     androidTestImplementation "androidx.test:runner:$TEST_RUNNER_VERSION"
-    androidTestImplementation "androidx.test:rules:$TEST_RUNNER_VERSION"
+    androidTestImplementation "androidx.test:rules:$TEST_RULES_VERSION"
+    androidTestImplementation "androidx.test.ext:junit:$TEST_EXT_JUNIT_VERSION"
     androidTestImplementation "org.mockito:mockito-inline:$MOCKITO_VERSION"
     androidTestImplementation "org.mockito:mockito-core:$MOCKITO_VERSION"
     androidTestImplementation("org.mockito:mockito-android:$MOCKITO_VERSION") {
         exclude group: "net.bytebuddy"
     }
+    androidTestImplementation "net.bytebuddy:byte-buddy:$BYTE_BUDDY_VERSION"
+    androidTestImplementation "net.bytebuddy:byte-buddy-agent:$BYTE_BUDDY_VERSION"
 }
 
-task sourceJar(type: Jar) {
+tasks.register('sourceJar', Jar) {
     from android.sourceSets.main.java.srcDirs
-    classifier "sources"
+    archiveClassifier.set('sources')
 }
 
 publishing {
     publications {
         libraryAar(MavenPublication) {
-            groupId packageName
+            groupId = packageName
             version = libraryVersionName
-            artifactId project.getName()
-            artifact sourceJar { classifier 'library' }
-            artifact("$buildDir/outputs/aar/${project.getName()}-library.aar") {classifier 'library' }
+            artifactId = project.name
+            artifact(sourceJar) {
+                classifier = 'library'
+            }
+            artifact("$buildDir/outputs/aar/${project.name}-library.aar") {
+                classifier = 'library'
+            }
         }
         releaseAar(MavenPublication) {
-            groupId packageName
-            groupId packageName
+            groupId = packageName
             version = libraryVersionName
-            artifactId project.getName()
-
-            artifact("$buildDir/outputs/aar/${project.getName()}-release.aar") { classifier 'release' }
-            artifact sourceJar { classifier 'release' }
+            artifactId = project.name
+            artifact("$buildDir/outputs/aar/${project.name}-release.aar") {
+                classifier = 'release'
+            }
+            artifact(sourceJar) {
+                classifier = 'release'
+            }
         }
         debugAar(MavenPublication) {
-            groupId packageName
-            groupId packageName
+            groupId = packageName
             version = libraryVersionName
-            artifactId project.getName()
-
-            artifact("$buildDir/outputs/aar/${project.getName()}-debug.aar") { classifier 'debug' }
-            artifact sourceJar { classifier 'debug' }
+            artifactId = project.name
+            artifact("$buildDir/outputs/aar/${project.name}-debug.aar") {
+                classifier = 'debug'
+            }
+            artifact(sourceJar) {
+                classifier = 'debug'
+            }
         }
         testAar(MavenPublication) {
-            groupId packageName
-            groupId packageName
+            groupId = packageName
             version = libraryVersionName
-            artifactId project.getName()
-
-            artifact("$buildDir/outputs/aar/${project.getName()}-batteryDataTest.aar") { classifier 'test' }
-            artifact sourceJar { classifier 'test' }
+            artifactId = project.name
+            artifact("$buildDir/outputs/aar/${project.name}-batteryDataTest.aar") {
+                classifier = 'test'
+            }
+            artifact(sourceJar) {
+                classifier = 'test'
+            }
         }
     }
 }

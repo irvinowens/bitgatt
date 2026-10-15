@@ -16,9 +16,9 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.SystemClock;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.rule.GrantPermissionRule;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.rule.GrantPermissionRule;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.AfterClass;
 import org.junit.Assert;

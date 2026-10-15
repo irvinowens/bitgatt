@@ -12,7 +12,7 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
-import android.support.test.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 
 import com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice;
 import com.fitbit.bluetooth.fbgatt.FitbitGatt;

@@ -18,7 +18,7 @@ import com.fitbit.bluetooth.fbgatt.TransactionResult;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.os.ParcelUuid;
-import android.support.test.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 
 import junit.framework.Assert;
 

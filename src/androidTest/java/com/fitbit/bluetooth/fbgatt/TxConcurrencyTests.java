@@ -13,8 +13,8 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.fitbit.bluetooth.fbgatt.tx.mocks.BlockingTaskTestMockTransaction;
 import com.fitbit.bluetooth.fbgatt.tx.mocks.MockNoOpTransaction;
