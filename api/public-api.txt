@@ -151,6 +151,7 @@ package com.fitbit.bluetooth.fbgatt {
     method public void cancelScan(@Nullable Context);
     method public void connectToScannedDevice(BluetoothDevice, com.fitbit.bluetooth.fbgatt.GattTransactionCallback);
     method protected BluetoothAdapter getAdapter(Context);
+    method public com.fitbit.bluetooth.fbgatt.advertise.BitGattAdvertiser getAdvertiser();
     method @NonNull public com.fitbit.bluetooth.fbgatt.AlwaysConnectedScanner getAlwaysConnectedScanner();
     method @Nullable public Context getAppContext();
     method public BluetoothDevice getBluetoothDevice(String);
@@ -199,6 +200,7 @@ package com.fitbit.bluetooth.fbgatt {
   }
 
   public static interface FitbitGatt.FitbitGattCallback {
+    method public default void onAdvertiseStateChanged(boolean, @Nullable com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError);
     method @MainThread public void onBluetoothOff();
     method @MainThread public void onBluetoothOn();
     method public void onBluetoothPeripheralDisconnected(com.fitbit.bluetooth.fbgatt.GattConnection);

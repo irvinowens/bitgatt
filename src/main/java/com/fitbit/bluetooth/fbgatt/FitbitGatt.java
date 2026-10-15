@@ -8,6 +8,8 @@
 
 package com.fitbit.bluetooth.fbgatt;
 
+import com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError;
+import com.fitbit.bluetooth.fbgatt.advertise.BitGattAdvertiser;
 import com.fitbit.bluetooth.fbgatt.logging.BitgattDebugTree;
 import com.fitbit.bluetooth.fbgatt.logging.BitgattReleaseTree;
 import com.fitbit.bluetooth.fbgatt.strategies.BluetoothOffClearGattServerStrategy;
@@ -311,6 +313,29 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
          */
         default void onScanFailed(ScanFailure failure) {
         }
+
+        /**
+         * Advertising started, stopped, or failed. The error is null when the radio change succeeded.
+         */
+        default void onAdvertiseStateChanged(boolean advertising, @Nullable AdvertiseError error) {
+        }
+    }
+
+    private BitGattAdvertiser advertiser;
+
+    /**
+     * The single advertiser. {@link #startServer} and {@link #bluetoothOn} do not start it.
+     */
+    public BitGattAdvertiser getAdvertiser() {
+        if (advertiser == null) {
+            advertiser = new BitGattAdvertiser(
+                    this::getAppContext,
+                    this::isBluetoothOn,
+                    this::getServer,
+                    this::adapterForAdvertiser,
+                    () -> overallGattEventListeners);
+        }
+        return advertiser;
     }
 
     @VisibleForTesting
@@ -1319,7 +1344,7 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
                 callback.onGattServerStatus(false);
                 return;
             }
-            fitbitGattAsyncOperationHandler.postDelayed(() -> {
+            Runnable openServer = () -> {
                 for (int openServerRetryCount = 0; openServerRetryCount < OPEN_GATT_SERVER_RETRY_COUNT; openServerRetryCount++) {
                     // the bluetooth team at Google recommended that we check to see if BT is off
                     // here ... it could also be that the BluetoothService has crashed, either way
@@ -1331,6 +1356,9 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
                     }
                     gattServer = manager.openGattServer(context, serverCallback);
                     if (gattServer != null) {
+                        if (advertiser != null) {
+                            advertiser.stop();
+                        }
                         // make sure there are no hidden services, we don't want duplicates for the phones who
                         // carry services across BT toggle.
 
@@ -1356,7 +1384,16 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
                 }
                 Timber.w("Exhausted retries to open gatt server, recommend that you tell your user to clear bluetooth share in the apps list, the GATT db is probably corrupt");
                 callback.onGattServerStatus(false);
-            }, GATT_SERVER_START_FAILURE_RETRY_INTERVAL);
+            };
+            boolean posted = false;
+            try {
+                posted = fitbitGattAsyncOperationHandler.postDelayed(openServer, GATT_SERVER_START_FAILURE_RETRY_INTERVAL);
+            } catch (RuntimeException ignored) {
+                posted = false;
+            }
+            if (!posted) {
+                openServer.run();
+            }
         } else {
             Timber.w("No bluetooth manager, we must be simulating, or BT is off!!!");
             callback.onGattServerStatus(false);
@@ -1608,6 +1645,19 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
     }
 
     /**
+     * Adapter used to advertise. API 21–22 keeps {@link BluetoothAdapter#getDefaultAdapter()}.
+     * When that returns null, the manager is the same radio and is what unit tests can stub.
+     */
+    private BluetoothAdapter adapterForAdvertiser(Context context) {
+        BluetoothAdapter adapter = getAdapter(context);
+        if (adapter != null || context == null || atLeastSDK(Build.VERSION_CODES.M)) {
+            return adapter;
+        }
+        BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        return manager == null ? null : manager.getAdapter();
+    }
+
+    /**
      * Returns the BluetoothDevice Object for a remote Device that has the mac Address specified
      * <p> The mac Address should be a valid, such as "00:43:A8:23:10:F0"
      * Alphabetic characters must be uppercase to be valid.
@@ -1735,6 +1785,9 @@ public class FitbitGatt implements PeripheralScanner.TrackerScannerListener, Blu
     public void bluetoothOff() {
         isBluetoothOn = false;
         Timber.v("Bluetooth is off");
+        if (advertiser != null) {
+            advertiser.stop();
+        }
         cleanUpBecauseBluetoothIsTurningOff();
         for (FitbitGattCallback callback : overallGattEventListeners) {
             callback.onBluetoothOff();

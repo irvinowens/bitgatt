@@ -241,6 +241,7 @@ public class GattServerConnection implements Closeable {
         BluetoothGattServer server = getServer();
         if(server != null) {
             setState(GattState.CLOSING_GATT_SERVER);
+            FitbitGatt.getInstance().getAdvertiser().stop();
             Timber.v("Clearing gatt server services");
             server.clearServices();
             Timber.v("Closing gatt server");
