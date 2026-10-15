@@ -38,6 +38,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
+    enableKotlin = true
+
     buildFeatures {
         buildConfig = true
     }
@@ -120,6 +122,10 @@ def metalavaClasspath = {
     }.collect { it.absolutePath }.join(File.pathSeparator)
 }
 
+def metalavaJavaSourceArg = {
+    fileTree(file('src/main/java')) { include '**/*.java' }.files.collect { it.absolutePath }.join(',')
+}
+
 tasks.register('updatePublicApi', JavaExec) {
     group = 'verification'
     description = 'Write the current public API signature to api/public-api.txt'
@@ -132,7 +138,7 @@ tasks.register('updatePublicApi', JavaExec) {
     doFirst {
         output.parentFile.mkdirs()
         args 'main',
-            '--source-path', file('src/main/java').absolutePath,
+            '--source-files', metalavaJavaSourceArg(),
             '--classpath', metalavaClasspath(),
             '--format', '2.0:strip-java-lang-prefix=never',
             '--api', output.absolutePath,
@@ -157,7 +163,7 @@ tasks.register('snapshotPublicApi', JavaExec) {
     doFirst {
         output.parentFile.mkdirs()
         args 'main',
-            '--source-path', file('src/main/java').absolutePath,
+            '--source-files', metalavaJavaSourceArg(),
             '--classpath', metalavaClasspath(),
             '--format', '2.0:strip-java-lang-prefix=never',
             '--api', output.absolutePath,

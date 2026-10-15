@@ -8,6 +8,7 @@
 
 package com.fitbit.bluetooth.fbgatt;
 
+import com.fitbit.bluetooth.fbgatt.engine.Admit;
 import com.fitbit.bluetooth.fbgatt.tx.SetClientConnectionStateTransaction;
 import com.fitbit.bluetooth.fbgatt.tx.mocks.GattConnectMockTransaction;
 import com.fitbit.bluetooth.fbgatt.tx.mocks.GattDisconnectMockTransaction;
@@ -69,52 +70,46 @@ public class GattTransactionValidatorTest {
     public void testCanNotEnterTransactionWithBluetoothOff() {
         conn.resetStates();
         conn.setState(GattState.BT_OFF);
-        GattStateTransitionValidator validator = new GattStateTransitionValidator();
         GattTransaction tx = new GattConnectMockTransaction(conn, GattState.CONNECTED, false);
-        GattStateTransitionValidator.GuardState guardState = validator.checkTransaction(conn.getGattState(), tx);
-        Assert.assertEquals(GattStateTransitionValidator.GuardState.INVALID_TARGET_STATE, guardState);
+        Admit.GuardState guardState = Admit.check(conn.getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
+        Assert.assertEquals(Admit.GuardState.INVALID_TARGET_STATE, guardState);
     }
 
     @Test
     public void testConnectionTransactionValidator() {
         conn.resetStates();
-        GattStateTransitionValidator validator = new GattStateTransitionValidator();
         GattTransaction tx = new GattConnectMockTransaction(conn, GattState.CONNECTED, false);
-        GattStateTransitionValidator.GuardState guardState = validator.checkTransaction(conn.getGattState(), tx);
-        Assert.assertEquals(GattStateTransitionValidator.GuardState.OK, guardState);
+        Admit.GuardState guardState = Admit.check(conn.getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
+        Assert.assertEquals(Admit.GuardState.OK, guardState);
     }
 
     @Test
     public void testConnectionWhileDisconnectedTransactionValidator() {
         conn.resetStates();
-        GattStateTransitionValidator validator = new GattStateTransitionValidator();
         GattTransaction tx = new GattConnectMockTransaction(conn, GattState.CONNECTED, false);
-        GattStateTransitionValidator.GuardState guardState = validator.checkTransaction(conn.getGattState(), tx);
-        Assert.assertEquals(GattStateTransitionValidator.GuardState.OK, guardState);
+        Admit.GuardState guardState = Admit.check(conn.getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
+        Assert.assertEquals(Admit.GuardState.OK, guardState);
     }
 
     @Test
     public void testDisconnectWhileConnectedTransactionValidator() {
         conn.setState(GattState.IDLE);
-        GattStateTransitionValidator validator = new GattStateTransitionValidator();
         GattTransaction tx = new GattDisconnectMockTransaction(conn, GattState.DISCONNECTED, false);
-        GattStateTransitionValidator.GuardState guardState = validator.checkTransaction(conn.getGattState(), tx);
-        Assert.assertEquals(GattStateTransitionValidator.GuardState.OK, guardState);
+        Admit.GuardState guardState = Admit.check(conn.getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
+        Assert.assertEquals(Admit.GuardState.OK, guardState);
     }
 
     @Test
     public void testConnectAfterDisconnectedTransactionValidator() {
         conn.setState(GattState.DISCONNECTED);
-        GattStateTransitionValidator validator = new GattStateTransitionValidator();
         GattTransaction tx = new GattConnectMockTransaction(conn, GattState.CONNECTED, false);
-        GattStateTransitionValidator.GuardState guardState = validator.checkTransaction(conn.getGattState(), tx);
-        Assert.assertEquals(GattStateTransitionValidator.GuardState.OK, guardState);
+        Admit.GuardState guardState = Admit.check(conn.getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
+        Assert.assertEquals(Admit.GuardState.OK, guardState);
     }
 
     @Test
     public void testAnythingOtherThanConnectWhileDisconnectedTransactionValidator() {
         conn.resetStates();
-        GattStateTransitionValidator validator = new GattStateTransitionValidator();
         GattTransaction tx = new ReadGattCharacteristicMockTransaction(conn,
                 GattState.READ_CHARACTERISTIC_SUCCESS,
                 new BluetoothGattCharacteristic(UUID.randomUUID(),
@@ -122,28 +117,26 @@ public class GattTransactionValidatorTest {
                         BluetoothGattCharacteristic.PROPERTY_INDICATE),
                 new byte[] { 0x12, 0x14},
                 false);
-        GattStateTransitionValidator.GuardState guardState = validator.checkTransaction(conn.getGattState(), tx);
-        Assert.assertEquals(GattStateTransitionValidator.GuardState.INVALID_TARGET_STATE, guardState);
+        Admit.GuardState guardState = Admit.check(conn.getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
+        Assert.assertEquals(Admit.GuardState.INVALID_TARGET_STATE, guardState);
     }
 
     @Test
     public void testSetStateInErrorConditionValidatorTest(){
         conn.resetStates();
         conn.setState(GattState.WRITE_CHARACTERISTIC_FAILURE);
-        GattStateTransitionValidator validator = new GattStateTransitionValidator();
         GattTransaction tx = new SetClientConnectionStateTransaction(conn, GattState.GATT_CONNECTION_STATE_SET_SUCCESSFULLY, GattState.IDLE);
-        GattStateTransitionValidator.GuardState guardState = validator.checkTransaction(conn.getGattState(), tx);
-        Assert.assertEquals(GattStateTransitionValidator.GuardState.OK, guardState);
+        Admit.GuardState guardState = Admit.check(conn.getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
+        Assert.assertEquals(Admit.GuardState.OK, guardState);
     }
 
     @Test
     public void testServerDisconnectionTransactionValidator() {
         conn.resetStates();
         conn.setState(GattState.CONNECTED);
-        GattStateTransitionValidator validator = new GattStateTransitionValidator();
         GattTransaction tx = new GattServerDisconnectMockTransaction(serverConnection, GattState.DISCONNECTED, device, false);
-        GattStateTransitionValidator.GuardState guardState = validator.checkTransaction(conn.getGattState(), tx);
-        Assert.assertEquals(GattStateTransitionValidator.GuardState.OK, guardState);
+        Admit.GuardState guardState = Admit.check(conn.getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
+        Assert.assertEquals(Admit.GuardState.OK, guardState);
     }
 
     @Test
@@ -156,5 +149,31 @@ public class GattTransactionValidatorTest {
                 new byte[] { 0x12, 0x14},
                 false, 100L);
         Assert.assertEquals(100L, writeGattCharacteristicMockTransaction.getTimeout());
+    }
+
+    @Test
+    public void stickyErrorRejectsTheNextOrdinaryTransaction() {
+        conn.setState(GattState.WRITE_CHARACTERISTIC_FAILURE);
+        GattTransaction tx = new ReadGattCharacteristicMockTransaction(conn,
+                GattState.READ_CHARACTERISTIC_SUCCESS,
+                new BluetoothGattCharacteristic(UUID.randomUUID(),
+                        BluetoothGattCharacteristic.PERMISSION_READ,
+                        BluetoothGattCharacteristic.PROPERTY_INDICATE),
+                new byte[] { 0x12, 0x14},
+                false);
+        Admit.GuardState guardState = Admit.check(conn.getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
+        Assert.assertEquals(Admit.GuardState.INVALID_TARGET_STATE, guardState);
+    }
+
+    @Test
+    public void timeoutLeavesInProgressAndTheNextTransactionIsAdmitted() {
+        conn.setState(GattState.WRITING_CHARACTERISTIC);
+        GattTransaction tx = new WriteGattCharacteristicMockTransaction(conn, GattState.WRITE_CHARACTERISTIC_SUCCESS, new BluetoothGattCharacteristic(UUID.randomUUID(),
+                BluetoothGattCharacteristic.PERMISSION_READ,
+                BluetoothGattCharacteristic.PROPERTY_INDICATE),
+                new byte[] { 0x12, 0x14},
+                false);
+        Admit.GuardState guardState = Admit.check(conn.getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
+        Assert.assertEquals(Admit.GuardState.OK, guardState);
     }
 }

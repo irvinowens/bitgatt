@@ -11,7 +11,6 @@ package com.fitbit.bluetooth.fbgatt;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,8 +30,6 @@ public class CompositeClientTransaction extends GattTransaction implements Close
     private List<GattTransaction> transactionList;
     private GattTransactionCallback finalCallback;
     private ArrayList<TransactionResult> results = new ArrayList<>();
-    private AtomicInteger transactionIndex = new AtomicInteger(0);
-    private TransactionQueueController compositeClientQueueController;
 
     public CompositeClientTransaction(@Nullable GattConnection connection, @NonNull List<GattTransaction> transactionList) {
         super(connection, GattState.IDLE);
@@ -47,54 +44,45 @@ public class CompositeClientTransaction extends GattTransaction implements Close
     protected void transaction(GattTransactionCallback callback) {
         super.transaction(callback);
         this.finalCallback = callback;
-        // The composite client transaction will need it's own queue controller to run
-        // child transactions while still blocking the main connection queue controller
-        compositeClientQueueController = new TransactionQueueController(NAME);
-        compositeClientQueueController.start();
-        // at this point the CDL for the transaction has already been latched
-        compositeClientQueueController.queueTransaction(this::executeTransaction);
+        // Children run on this connection's dispatcher. commit blocks until each child
+        // finishes, so the parent stays held and there is no nested queue.
+        runChildren();
     }
 
-    private void executeTransaction(){
-        if(!transactionList.isEmpty()) {
-            transactionList.get(transactionIndex.get()).commit(result -> {
-                // now result is going to typically be on the main thread and this is a problem, so
-                // in actuality we need to requeue the next tx run, the guarantee is that the provided
-                // tx will run in order and this does not violate that even if other tx jump in-between
-                results.add(result);
-                int newValue = transactionIndex.incrementAndGet();
-                Timber.v("[%s] Transaction result: %s", getDevice(), result);
-                if(result.getResultStatus().equals(TransactionResult.TransactionResultStatus.SUCCESS)) {
-                    if(newValue <= (transactionList.size() - 1)) {
-                        // added the result on the main thread, but now we will queue the next on
-                        // the main thread like normal but it will actually run on the queue
-                        // controller thread
-                        compositeClientQueueController.queueTransaction(() -> {
-                            executeTransaction();
-                            Timber.v("[%s] Transaction %s was successful, moving on to index: %d", getDevice(), result, newValue);
-                        });
-                    } else {
-                        Timber.d("[%s] Finished running all transactions successfully, last result: %s", getDevice(), result);
-                        TransactionResult.Builder builder = new TransactionResult.Builder();
-                        builder.resultStatus(TransactionResult.TransactionResultStatus.SUCCESS);
-                        builder.transactionName(NAME);
-                        callCallbackWithTransactionResultAndRelease(finalCallback, builder.addTransactionResults(results).build());
-                    }
-                } else {
-                    Timber.w("[%s] Transaction %s failed with result: %s, aborting chain", getDevice(), result.getTransactionName(), result);
-                    TransactionResult.Builder builder = new TransactionResult.Builder();
-                    builder.resultStatus(TransactionResult.TransactionResultStatus.FAILURE);
-                    builder.transactionName(NAME).addTransactionResults(results);
-                    callCallbackWithTransactionResultAndRelease(finalCallback, builder.build());
-                }
-            });
-        } else {
+    private void runChildren() {
+        if (transactionList.isEmpty()) {
             Timber.w("[%s] Transaction list was empty", getDevice());
-            TransactionResult.Builder builder = new TransactionResult.Builder();
-            builder.resultStatus(TransactionResult.TransactionResultStatus.FAILURE);
-            builder.transactionName(NAME).addTransactionResults(results);
-            callCallbackWithTransactionResultAndRelease(finalCallback, builder.build());
+            finish(TransactionResult.TransactionResultStatus.FAILURE);
+            return;
         }
+        for (int index = 0; index < transactionList.size(); index++) {
+            final TransactionResult[] slot = new TransactionResult[1];
+            transactionList.get(index).commit(result -> slot[0] = result);
+            TransactionResult result = slot[0];
+            if (result == null) {
+                result = new TransactionResult.Builder()
+                        .transactionName(NAME)
+                        .resultStatus(TransactionResult.TransactionResultStatus.FAILURE)
+                        .build();
+            }
+            results.add(result);
+            Timber.v("[%s] Transaction result: %s", getDevice(), result);
+            if (!result.getResultStatus().equals(TransactionResult.TransactionResultStatus.SUCCESS)) {
+                Timber.w("[%s] Transaction %s failed with result: %s, aborting chain", getDevice(), result.getTransactionName(), result);
+                finish(TransactionResult.TransactionResultStatus.FAILURE);
+                return;
+            }
+            Timber.v("[%s] Transaction %s was successful, moving on to index: %d", getDevice(), result, index + 1);
+        }
+        Timber.d("[%s] Finished running all transactions successfully, last result: %s", getDevice(), results.get(results.size() - 1));
+        finish(TransactionResult.TransactionResultStatus.SUCCESS);
+    }
+
+    private void finish(TransactionResult.TransactionResultStatus status) {
+        TransactionResult.Builder builder = new TransactionResult.Builder();
+        builder.resultStatus(status);
+        builder.transactionName(NAME).addTransactionResults(results);
+        callCallbackWithTransactionResultAndRelease(finalCallback, builder.build());
     }
 
     @Override
@@ -120,9 +108,6 @@ public class CompositeClientTransaction extends GattTransaction implements Close
 
     @Override
     public void close() {
-        if (this.compositeClientQueueController != null) {
-            this.compositeClientQueueController.stop();
-            this.compositeClientQueueController = null;
-        }
+        // The nested queue is gone. The connection dispatcher stays up.
     }
 }

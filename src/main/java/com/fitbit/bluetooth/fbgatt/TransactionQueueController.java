@@ -8,96 +8,58 @@
 
 package com.fitbit.bluetooth.fbgatt;
 
-import java.util.Locale;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.fitbit.bluetooth.fbgatt.engine.ConnectionEngine;
 
-import timber.log.Timber;
-
+/**
+ * Public face of the per-connection dispatcher. The queue itself is {@link ConnectionEngine}.
+ * {@code getClientTransactionQueueController()} returns this shell so existing callers keep
+ * compiling. There is no second queue.
+ */
 class TransactionQueueController {
 
-    private String threadName;
-    private AtomicBoolean stop = new AtomicBoolean(false);
-    private final LinkedBlockingQueue<Runnable> transactionQueue = new LinkedBlockingQueue<>();
-    private ClientThread transactionThread;
+    private final ConnectionEngine engine;
 
-    TransactionQueueController(GattConnection connection){
-        this.threadName = String.format(Locale.ENGLISH, "%s GATT Transaction Thread", connection.getDevice().getName());
+    TransactionQueueController(GattConnection connection) {
+        this.engine = BitGattComponents.connectionEngine(connection.getDevice().getName());
     }
 
-    TransactionQueueController(){
-        this.threadName = "GATT Server Transaction Thread";
+    TransactionQueueController() {
+        this.engine = BitGattComponents.serverEngine();
     }
 
     TransactionQueueController(String name) {
-        this.threadName = name;
+        this.engine = BitGattComponents.namedEngine(name);
     }
 
-
     void queueTransaction(Runnable tx) {
-        if(stop.get()) {
-            Timber.i("Implicitly restarting queue");
-            start();
-        }
-        transactionQueue.add(tx);
+        engine.queueTransaction(tx);
     }
 
     /**
      * Will return the client thread being used to run transactions on this connection
      * @return The client transaction thread
      */
-
-    ClientThread getTransactionThread(){
-        return transactionThread;
+    Thread getTransactionThread() {
+        return engine.getTransactionThread();
     }
 
-    void clearQueue(){
-        transactionQueue.clear();
+    void clearQueue() {
+        engine.clearQueue();
     }
 
-    synchronized void start(){
-        Timber.v("Starting execution thread");
-        stop.compareAndSet(true, false);
-        if(transactionThread != null) {
-            transactionThread.interrupt();
-            transactionThread = null;
-        }
-        transactionThread = new ClientThread(threadName);
-        transactionThread.setPriority(Thread.MAX_PRIORITY);
-        transactionThread.start();
+    synchronized void start() {
+        engine.start();
     }
 
-    synchronized void stop(){
-        Timber.v("Stopping execution thread");
-        stop.compareAndSet(false, true);
-        clearQueue();
-        transactionThread.interrupt();
-        transactionThread = null;
+    synchronized void stop() {
+        engine.stop();
     }
 
-    boolean isQueueThreadStopped(){
-        return transactionThread == null || transactionThread.isInterrupted();
+    boolean isQueueThreadStopped() {
+        return engine.isQueueThreadStopped();
     }
 
-    private class ClientThread extends Thread {
-
-        ClientThread(String name) {
-            super(name);
-        }
-
-        @Override
-        public void run(){
-            Runnable tx;
-            while(!stop.get()) {
-                try {
-                    tx = transactionQueue.take();
-                    tx.run();
-                } catch (InterruptedException e) {
-                    Timber.i("Thread was interrupted, it's OK, we will retake");
-                }
-            }
-            Timber.i("Thread was stopped");
-        }
+    ConnectionEngine engine() {
+        return engine;
     }
-
 }

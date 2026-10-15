@@ -8,6 +8,9 @@
 
 package com.fitbit.bluetooth.fbgatt;
 
+import com.fitbit.bluetooth.fbgatt.engine.Admit;
+import com.fitbit.bluetooth.fbgatt.engine.ConnectionEngine;
+
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothProfile;
@@ -38,7 +41,7 @@ public class GattServerConnection implements Closeable {
     private TransactionQueueController serverQueue;
     private GattState state;
     private AtomicLong intraTransactionDelay = new AtomicLong(0);
-    private GattStateTransitionValidator guard;
+    private final Looper callbackLooper;
     private ArrayList<ServerConnectionEventListener> asynchronousEventListeners;
     private HashSet<FitbitBluetoothDevice> connectedDevices = new HashSet<>();
     private Handler mainHandler;
@@ -46,9 +49,9 @@ public class GattServerConnection implements Closeable {
 
     protected GattServerConnection(@Nullable BluetoothGattServer server, Looper looper) {
         this.server = server;
+        this.callbackLooper = looper;
         this.serverQueue = new TransactionQueueController();
         this.serverQueue.start();
-        this.guard = new GattStateTransitionValidator();
         this.state = GattState.IDLE;
         this.asynchronousEventListeners = new ArrayList<>(1);
         this.mainHandler = new Handler(looper);
@@ -62,8 +65,8 @@ public class GattServerConnection implements Closeable {
         return server;
     }
 
-    synchronized GattStateTransitionValidator.GuardState checkTransaction(GattTransaction tx) {
-        return guard.checkTransaction(getGattState(), tx);
+    synchronized Admit.GuardState checkTransaction(GattTransaction tx) {
+        return Admit.check(getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
     }
 
     public void registerConnectionEventListener(ServerConnectionEventListener eventListener) {
@@ -153,7 +156,8 @@ public class GattServerConnection implements Closeable {
     }
 
     private void queueTransaction(GattTransaction transaction, GattTransactionCallback callback) {
-        serverQueue.queueTransaction(() -> transaction.commit(callback));
+        serverQueue.engine().queueTransaction(() -> transaction.commit(result ->
+                ConnectionEngine.deliverOnMainLooper(callbackLooper, mainHandler, () -> callback.onTransactionComplete(result))));
     }
 
     /**

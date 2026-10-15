@@ -8,6 +8,8 @@
 
 package com.fitbit.bluetooth.fbgatt;
 
+import com.fitbit.bluetooth.fbgatt.engine.Admit;
+import com.fitbit.bluetooth.fbgatt.engine.ConnectionEngine;
 import com.fitbit.bluetooth.fbgatt.util.GattStatus;
 import com.fitbit.bluetooth.fbgatt.util.GattUtils;
 
@@ -47,7 +49,7 @@ public class GattConnection implements Closeable {
     private FitbitBluetoothDevice device;
     private @Nullable volatile BluetoothGatt gatt;
     private GattState state;
-    private GattStateTransitionValidator guard;
+    private final Looper callbackLooper;
     private List<ConnectionEventListener> asynchronousEventListeners;
     private boolean mockMode;
     private List<BluetoothGattService> mockServices;
@@ -57,7 +59,7 @@ public class GattConnection implements Closeable {
 
     public GattConnection(FitbitBluetoothDevice device, Looper mainLooper) {
         this.device = device;
-        this.guard = new GattStateTransitionValidator();
+        this.callbackLooper = mainLooper;
         this.asynchronousEventListeners = new ArrayList<>(1);
         this.mockServices = new ArrayList<>(1);
         this.clientQueue = new TransactionQueueController(this);
@@ -218,8 +220,8 @@ public class GattConnection implements Closeable {
         return device;
     }
 
-    synchronized GattStateTransitionValidator.GuardState checkTransaction(GattTransaction tx) {
-        return guard.checkTransaction(getGattState(), tx);
+    synchronized Admit.GuardState checkTransaction(GattTransaction tx) {
+        return Admit.check(getGattState(), tx.getSuccessState(), tx.admitsRegardlessOfState());
     }
 
     void resetStates() {
@@ -544,7 +546,8 @@ public class GattConnection implements Closeable {
     }
 
     private void queueTransaction(GattTransaction transaction, GattTransactionCallback callback) {
-        clientQueue.queueTransaction(() -> transaction.commit(callback));
+        clientQueue.engine().queueTransaction(() -> transaction.commit(result ->
+                ConnectionEngine.deliverOnMainLooper(callbackLooper, mainHandler, () -> callback.onTransactionComplete(result))));
     }
 
     /**

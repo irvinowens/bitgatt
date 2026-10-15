@@ -10,6 +10,8 @@ package com.fitbit.bluetooth.fbgatt;
 
 import com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy;
 import com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy;
+import com.fitbit.bluetooth.fbgatt.engine.Admit;
+import com.fitbit.bluetooth.fbgatt.engine.ConnectionEngine;
 import com.fitbit.bluetooth.fbgatt.tx.GattConnectTransaction;
 import com.fitbit.bluetooth.fbgatt.util.GattUtils;
 
@@ -202,7 +204,8 @@ public abstract class GattTransaction extends GattServerCallback implements Gatt
             transactions.addAll(postCommitHooks);
         }
         // the entire transaction must complete in {@link timeout} time.
-        scheduleTransactionTimeout(this, callback);
+        ConnectionEngine engine = engine();
+        engine.scheduleTimeout(timeoutHandler, timeout, () -> handleTimeout(this, callback));
         while (!transactions.isEmpty()) {
             GattTransaction tx = transactions.remove(0);
             if (!areConditionsValidForExecution(tx)) {
@@ -226,7 +229,7 @@ public abstract class GattTransaction extends GattServerCallback implements Gatt
                 return;
             }
             try {
-                cdl.await(timeout, TimeUnit.MILLISECONDS);
+                engine.awaitLatch(cdl, timeout);
             } catch (InterruptedException e) {
                 Timber.d("Transaction was interrupted while waiting for result, re-interrupting thread : %s", Thread.currentThread().getName());
                 Thread.currentThread().interrupt();
@@ -248,7 +251,7 @@ public abstract class GattTransaction extends GattServerCallback implements Gatt
         GattServerConnection txGattServer = tx.getGattServer();
         // check if transaction entry conditions are valid
         if (txConnection != null) {
-            if (txConnection.checkTransaction(tx).equals(GattStateTransitionValidator.GuardState.INVALID_TARGET_STATE)) {
+            if (txConnection.checkTransaction(tx).equals(Admit.GuardState.INVALID_TARGET_STATE)) {
                 TransactionResult transactionResult = new TransactionResult.Builder().transactionName(tx.getName())
                         .gattState(tx.getConnection().getGattState())
                         .resultStatus(TransactionResult.TransactionResultStatus.INVALID_STATE).build();
@@ -260,7 +263,7 @@ public abstract class GattTransaction extends GattServerCallback implements Gatt
                 return false;
             }
         } else if (txGattServer != null) {
-            if (txGattServer.checkTransaction(tx).equals(GattStateTransitionValidator.GuardState.INVALID_TARGET_STATE)) {
+            if (txGattServer.checkTransaction(tx).equals(Admit.GuardState.INVALID_TARGET_STATE)) {
                 TransactionResult transactionResult = new TransactionResult.Builder().transactionName(tx.getName())
                         .gattState(tx.getGattServer().getGattState())
                         .resultStatus(TransactionResult.TransactionResultStatus.INVALID_STATE).build();
@@ -355,8 +358,14 @@ public abstract class GattTransaction extends GattServerCallback implements Gatt
         };
     }
 
-    private void scheduleTransactionTimeout(GattTransaction tx, GattTransactionCallback callback) {
-        timeoutHandler.postDelayed(() -> handleTimeout(tx, callback), timeout);
+    private ConnectionEngine engine() {
+        if (getConnection() != null && getConnection().getClientTransactionQueueController() != null) {
+            return getConnection().getClientTransactionQueueController().engine();
+        }
+        if (getGattServer() != null && getGattServer().getServerTransactionQueueController() != null) {
+            return getGattServer().getServerTransactionQueueController().engine();
+        }
+        throw new IllegalStateException(String.format(Locale.ENGLISH, "[%s] This transaction can not be run because there is no connection to support it", getDevice()));
     }
 
     private void handleTimeout(GattTransaction tx, GattTransactionCallback callback) {
@@ -478,6 +487,13 @@ public abstract class GattTransaction extends GattServerCallback implements Gatt
     @SuppressWarnings("WeakerAccess") // API Method
     protected void onGattServerTransactionTimeout(GattServerConnection connection) {
         Timber.v("[%s] onTimeout for server connection %s not handled in tx: %s", Build.MODEL, connection, getName());
+    }
+
+    /**
+     * Reset transactions may run from an error state. Bluetooth off still rejects them.
+     */
+    protected boolean admitsRegardlessOfState() {
+        return false;
     }
 
     protected GattState getSuccessState() {

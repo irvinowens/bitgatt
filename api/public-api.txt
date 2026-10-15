@@ -393,6 +393,7 @@ package com.fitbit.bluetooth.fbgatt {
     ctor public GattTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
     method @Deprecated public void addPostCommitHook(com.fitbit.bluetooth.fbgatt.GattTransaction);
     method @Deprecated public void addPreCommitHook(com.fitbit.bluetooth.fbgatt.GattTransaction);
+    method protected boolean admitsRegardlessOfState();
     method @CallSuper public void callCallbackWithTransactionResultAndRelease(com.fitbit.bluetooth.fbgatt.GattTransactionCallback, com.fitbit.bluetooth.fbgatt.TransactionResult);
     method @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.PACKAGE_PRIVATE) public void commit(com.fitbit.bluetooth.fbgatt.GattTransactionCallback);
     method protected com.fitbit.bluetooth.fbgatt.GattConnection getConnection();
