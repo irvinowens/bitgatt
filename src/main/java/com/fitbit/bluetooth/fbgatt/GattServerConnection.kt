@@ -31,15 +31,15 @@ import timber.log.Timber
  */
 open class GattServerConnection(
     @Nullable private var server: BluetoothGattServer?,
-    looper: Looper
+    looper: Looper?
 ) : Closeable {
     private var serverQueue: TransactionQueueController? = TransactionQueueController()
     private var state: GattState = GattState.IDLE
     private val intraTransactionDelay = AtomicLong(0)
-    private val callbackLooper: Looper = looper
+    private val callbackLooper: Looper? = looper
     private val asynchronousEventListeners = ArrayList<ServerConnectionEventListener>(1)
     private val connectedDevices = HashSet<FitbitBluetoothDevice>()
-    private val mainHandler: Handler = Handler(looper)
+    private val mainHandler: Handler = Handler::class.java.getConstructor(Looper::class.java).newInstance(looper)
     private var mockMode: Boolean = false
 
     init {

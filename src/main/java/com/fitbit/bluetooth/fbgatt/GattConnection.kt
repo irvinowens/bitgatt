@@ -42,21 +42,21 @@ import timber.log.Timber
  */
 open class GattConnection(
     private val device: FitbitBluetoothDevice,
-    mainLooper: Looper
+    mainLooper: Looper?
 ) : Closeable {
     private val disconnectedTTL = AtomicLong(FitbitGatt.MAX_TTL)
     @Nullable
     @Volatile
     private var gatt: BluetoothGatt? = null
     private var state: GattState = GattState.DISCONNECTED
-    private val callbackLooper: Looper = mainLooper
+    private val callbackLooper: Looper? = mainLooper
     private val asynchronousEventListeners = ArrayList<ConnectionEventListener>(1)
     private var mockMode: Boolean = false
     private val mockServices = ArrayList<BluetoothGattService>(1)
     private val clientQueue: TransactionQueueController = TransactionQueueController(this)
     private val intraTransactionDelay = AtomicLong(0)
     @NonNull
-    private val mainHandler: Handler = Handler(mainLooper)
+    private val mainHandler: Handler = handlerFor(mainLooper)
 
     init {
         clientQueue.start()
@@ -486,6 +486,10 @@ open class GattConnection(
     companion object {
         private val DIRECT_CONNECT_EXECUTOR: Executor = Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "BitGatt connectGatt").apply { isDaemon = true }
+        }
+
+        private fun handlerFor(looper: Looper?): Handler {
+            return Handler::class.java.getConstructor(Looper::class.java).newInstance(looper)
         }
     }
 }

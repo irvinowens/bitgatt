@@ -830,14 +830,18 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
         return null
     }
 
+    private fun interface OpenGattServerCallback {
+        fun onGattServerStatus(started: Boolean)
+    }
+
     @Synchronized
-    private fun startServer(context: Context, callback: (Boolean) -> Unit) {
+    private fun startServer(context: Context, callback: OpenGattServerCallback) {
         val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager?
         if (manager != null && manager.adapter != null) {
             val missingConnect = GattUtils.missingConnectPermission(context)
             if (missingConnect != null) {
                 Timber.w("openGattServer refused, missing %s", missingConnect)
-                callback(false)
+                callback.onGattServerStatus(false)
                 return
             }
             val openServer = Runnable {
@@ -845,7 +849,7 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
                     val adapter = manager.adapter
                     if (adapter == null || !adapter.isEnabled) {
                         Timber.w("Bluetooth was turned off while attempting to start server")
-                        callback(false)
+                        callback.onGattServerStatus(false)
                         return@Runnable
                     }
                     gattServer = manager.openGattServer(context, serverCallback)
@@ -872,7 +876,7 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
                     }
                 }
                 Timber.w("Exhausted retries to open gatt server, recommend that you tell your user to clear bluetooth share in the apps list, the GATT db is probably corrupt")
-                callback(false)
+                callback.onGattServerStatus(false)
             }
             var posted = false
             try {
@@ -885,15 +889,15 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
             }
         } else {
             Timber.w("No bluetooth manager, we must be simulating, or BT is off!!!")
-            callback(false)
+            callback.onGattServerStatus(false)
         }
     }
 
-    private fun replaceGattServerConnection(context: Context, callback: (Boolean) -> Unit) {
+    private fun replaceGattServerConnection(context: Context, callback: OpenGattServerCallback) {
         serverConnection?.close()
         serverConnection = GattServerConnection(gattServer, context.mainLooper)
         serverConnection!!.setState(GattState.IDLE)
-        callback(true)
+        callback.onGattServerStatus(true)
         Timber.v("Gatt server successfully opened")
     }
 
