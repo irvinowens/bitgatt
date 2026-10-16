@@ -236,7 +236,7 @@ public class AlwaysConnectedScanner implements FitbitGatt.FitbitGattCallback {
      *
      * @param filters The list of filters to be added
      */
-    void setScanFilters(List<ScanFilter> filters) {
+    public void setScanFilters(List<ScanFilter> filters) {
         this.scanFilters.addAll(filters);
     }
 
@@ -322,7 +322,7 @@ public class AlwaysConnectedScanner implements FitbitGatt.FitbitGattCallback {
      */
 
     public synchronized void removeScanFilter(@NonNull Context context, @NonNull ScanFilter scanFilter) {
-        if (!scanFilters.contains(scanFilter)) {
+        if (scanFilters.contains(scanFilter)) {
             scanFilters.remove(scanFilter);
         }
         if (FitbitGatt.getInstance().getPeripheralScanner() != null) {

@@ -13,7 +13,6 @@ import com.fitbit.bluetooth.fbgatt.GattServerTransaction;
 import com.fitbit.bluetooth.fbgatt.GattState;
 import com.fitbit.bluetooth.fbgatt.GattTransactionCallback;
 import com.fitbit.bluetooth.fbgatt.TransactionResult;
-import com.fitbit.bluetooth.fbgatt.descriptors.CharacteristicNamespaceDescriptor;
 import com.fitbit.bluetooth.fbgatt.descriptors.CharacteristicNotificationDescriptor;
 import com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason;
 import com.fitbit.bluetooth.fbgatt.util.GattStatus;
@@ -27,9 +26,9 @@ import java.util.List;
 import timber.log.Timber;
 
 /**
- * Will add gatt server service characteristics to the local gatt server.  Ensure that all characteristics
- * implement both the 0x2902 and the 0x2904 descriptor to ensure that they exist as some phones
- * do not implement them.  The caller should check
+ * Will add gatt server service characteristics to the local gatt server. A client characteristic
+ * configuration descriptor (0x2902) is added only when the characteristic has notify or indicate.
+ * A presentation-format descriptor (0x2904) is not added. The caller should check
  * before adding for the existence of this characteristic on the provided service or the result
  * will be a failure
  *
@@ -99,23 +98,21 @@ public class AddGattServerServiceCharacteristicTransaction extends GattServerTra
     }
 
     /**
-     * It looks like some phones do not implement these on their own while others implement one or the other
-     * or both, so to be sure we want to make sure that any characteristics that we create have these critical
-     * descriptors so that we have an opportunity to respond to any read or write requests coming into our
-     * gatt server.
+     * Add the client characteristic configuration descriptor when the characteristic notifies or
+     * indicates. A writable 0x2904 presentation-format descriptor is not synthesized.
      * @param characteristic The characteristic that we are adding to a service
      */
-
     private void addCriticalDescriptorsIfNecessary(BluetoothGattCharacteristic characteristic) {
+        int properties = characteristic.getProperties();
+        boolean signals = (properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0
+                || (properties & BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0;
+        if (!signals) {
+            return;
+        }
         CharacteristicNotificationDescriptor notificationDescriptor = new CharacteristicNotificationDescriptor();
         BluetoothGattDescriptor descriptor = characteristic.getDescriptor(notificationDescriptor.getUuid());
         if(descriptor == null) {
             characteristic.addDescriptor(notificationDescriptor);
-        }
-        CharacteristicNamespaceDescriptor namespaceDescriptor = new CharacteristicNamespaceDescriptor();
-        BluetoothGattDescriptor characteristicNamespaceDescriptor = characteristic.getDescriptor(namespaceDescriptor.getUuid());
-        if(characteristicNamespaceDescriptor == null) {
-            characteristic.addDescriptor(namespaceDescriptor);
         }
     }
 

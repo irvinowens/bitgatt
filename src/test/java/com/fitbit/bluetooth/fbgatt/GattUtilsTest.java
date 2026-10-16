@@ -109,6 +109,31 @@ public class GattUtilsTest {
     }
 
     @Test
+    public void testCopyDescriptorKeepsRemoteValueAndParent() {
+        byte[] data = new byte[]{0x01, 0x02};
+        UUID parentUuid = UUID.fromString("E69169D1-11A7-4545-B7FC-02A3ADFC3EAC");
+        BluetoothGattCharacteristic parent = mock(BluetoothGattCharacteristic.class);
+        when(parent.getUuid()).thenReturn(parentUuid);
+        when(parent.getPermissions()).thenReturn(BluetoothGattCharacteristic.PERMISSION_READ);
+        when(parent.getProperties()).thenReturn(BluetoothGattCharacteristic.PROPERTY_READ);
+        when(parent.getValue()).thenReturn(null);
+        BluetoothGattDescriptor descriptor = mock(BluetoothGattDescriptor.class);
+        when(descriptor.getValue()).thenReturn(data);
+        when(descriptor.getUuid()).thenReturn(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"));
+        when(descriptor.getPermissions()).thenReturn(BluetoothGattDescriptor.PERMISSION_READ);
+        when(descriptor.getCharacteristic()).thenReturn(parent);
+        BluetoothGattDescriptorCopy result = new GattUtils().copyDescriptor(descriptor);
+        if (result == null) {
+            fail("The descriptor copy was null");
+            return;
+        }
+        data[1] = 0x04;
+        Assert.assertArrayEquals(new byte[]{0x01, 0x02}, result.getValue());
+        Assert.assertNotNull(result.getCharacteristic());
+        Assert.assertEquals(parentUuid, result.getCharacteristic().getUuid());
+    }
+
+    @Test
     public void testCopyCharacteristicWithDescriptorChild(){
         byte[] data = null;
         BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);

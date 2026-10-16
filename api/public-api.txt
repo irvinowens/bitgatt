@@ -1,0 +1,1462 @@
+// Signature format: 2.0
+package com.fitbit.bluetooth.fbgatt {
+
+  public class AlwaysConnectedScanner implements com.fitbit.bluetooth.fbgatt.FitbitGatt.FitbitGattCallback {
+    method public void addScanFilter(@NonNull Context, @NonNull ScanFilter);
+    method public void addScanFilters(@NonNull Context, @NonNull List<ScanFilter>);
+    method public int getNumberOfExpectedDevices();
+    method public boolean isAlwaysConnectedScannerEnabled();
+    method public void onBluetoothOff();
+    method public void onBluetoothOn();
+    method public void onBluetoothPeripheralDisconnected(com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onBluetoothPeripheralDiscovered(com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onBluetoothTurningOff();
+    method public void onBluetoothTurningOn();
+    method public void onFitbitGattReady();
+    method public void onFitbitGattStartFailed();
+    method public void onPendingIntentScanStarted();
+    method public void onPendingIntentScanStopped();
+    method public void onScanStarted();
+    method public void onScanStopped();
+    method public void registerAlwaysConnectedScannerListener(com.fitbit.bluetooth.fbgatt.AlwaysConnectedScannerListener);
+    method public void removeScanFilter(@NonNull Context, @NonNull ScanFilter);
+    method public void setNumberOfExpectedDevices(int);
+    method public void setScanFilters(List<ScanFilter>);
+    method public void setShouldKeepLooking(boolean);
+    method public boolean shouldKeepLooking();
+    method public boolean start(@NonNull Context);
+    method public boolean startHighPriorityScan(@NonNull Context);
+    method public boolean startWithFilters(@NonNull Context, @NonNull List<ScanFilter>);
+    method public void stop(@NonNull Context);
+    method public void unregisterAlwaysConnectedScannerListener(com.fitbit.bluetooth.fbgatt.AlwaysConnectedScannerListener);
+  }
+
+  public interface AlwaysConnectedScannerListener {
+    method public void onPeripheralConnected(com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onPeripheralConnectionError(com.fitbit.bluetooth.fbgatt.TransactionResult);
+  }
+
+  public final class AndroidDevice {
+    method public boolean equals(@Nullable java.lang.Object other);
+    method @NonNull public error.NonExistentClass getAndroidProperties();
+    method @Nullable public java.lang.Integer getApiLevel();
+    method @Nullable public java.lang.String getBoard();
+    method @Nullable public java.lang.String getBootloader();
+    method @Nullable public java.lang.String getBrand();
+    method @Nullable public java.lang.String getDevice();
+    method @Nullable public java.lang.String getDeviceModel();
+    method @Nullable public java.lang.String getDisplay();
+    method @Nullable public java.lang.String getFingerprint();
+    method @Nullable public java.lang.String getHardware();
+    method @Nullable public java.lang.String getHost();
+    method @Nullable public java.lang.String getId();
+    method @Nullable public java.lang.String getManufacturerName();
+    method @Nullable public java.lang.String getProduct();
+    method @Nullable public java.lang.String getRadioVersion();
+    method @Nullable public java.lang.String getType();
+    method public int hashCode();
+    method @NonNull public java.lang.String toString();
+    field @NonNull public static final com.fitbit.bluetooth.fbgatt.AndroidDevice.Companion Companion;
+  }
+
+  public static final class AndroidDevice.Builder {
+    ctor public AndroidDevice.Builder();
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder apiLevel(@Nullable java.lang.Integer apiLevel);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder board(@Nullable java.lang.String board);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder bootloader(@Nullable java.lang.String bootloader);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder brand(@Nullable java.lang.String brand);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice build();
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder device(@Nullable java.lang.String device);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder deviceModel(@Nullable java.lang.String deviceModel);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder display(@Nullable java.lang.String display);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder fingerprint(@Nullable java.lang.String fingerprint);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder hardware(@Nullable java.lang.String hardware);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder host(@Nullable java.lang.String host);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder id(@Nullable java.lang.String id);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder manufacturerName(@Nullable java.lang.String manufacturerName);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder product(@Nullable java.lang.String product);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder radioVersion(@Nullable java.lang.String radioVersion);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice.Builder type(@Nullable java.lang.String type);
+  }
+
+  public static final class AndroidDevice.Companion {
+  }
+
+  public final class BitGattComponents {
+    method @NonNull public static com.fitbit.bluetooth.fbgatt.engine.ConnectionEngine connectionEngine(@Nullable java.lang.String deviceName);
+    method @NonNull public static com.fitbit.bluetooth.fbgatt.engine.ConnectionEngine namedEngine(@NonNull java.lang.String name);
+    method @NonNull public static com.fitbit.bluetooth.fbgatt.engine.ConnectionEngine serverEngine();
+    field @NonNull public static final com.fitbit.bluetooth.fbgatt.BitGattComponents INSTANCE;
+  }
+
+  public final class BitGattCoroutinesKt {
+    method @Nullable public static suspend java.lang.Object runTx(@NonNull com.fitbit.bluetooth.fbgatt.GattConnection, @NonNull com.fitbit.bluetooth.fbgatt.GattTransaction transaction, @NonNull kotlin.coroutines.Continuation<? super com.fitbit.bluetooth.fbgatt.TransactionResult>);
+  }
+
+  public class BluetoothRadioStatusListener {
+  }
+
+  public class CompositeClientTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public CompositeClientTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, @NonNull List<com.fitbit.bluetooth.fbgatt.GattTransaction>);
+    method public void close();
+    method public String getName();
+    field public static final String NAME = "CompositeClientTransaction";
+  }
+
+  public class CompositeServerTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public CompositeServerTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, @NonNull List<com.fitbit.bluetooth.fbgatt.GattServerTransaction>);
+    method public void close();
+    field public static final String NAME = "CompositeServerTransaction";
+  }
+
+  public interface ConnectionEventListener {
+    method public void onClientCharacteristicChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onClientConnectionStateChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public default void onConnectionUpdated(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onMtuChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onPhyChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onServicesDiscovered(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+  }
+
+  public final class DeviceNameFilterFile {
+    method @NonNull public static List<String> load(@NonNull File);
+    method @NonNull public static List<String> parse(@NonNull String);
+  }
+
+  public class FitbitBluetoothDevice {
+    ctor public FitbitBluetoothDevice(@NonNull BluetoothDevice);
+    ctor public FitbitBluetoothDevice(String, String);
+    method public void addDevicePropertiesChangedListener(com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DevicePropertiesChangedCallback);
+    method public boolean equals(Object);
+    method public String getAddress();
+    method @Nullable public Integer getAdvertisingSid();
+    method public BluetoothDevice getBtDevice();
+    method @Nullable public Integer getDataStatus();
+    method public String getName();
+    method public com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DeviceOrigin getOrigin();
+    method @Nullable public Integer getPrimaryPhy();
+    method public int getRssi();
+    method @Nullable public ScanRecord getScanRecord();
+    method @Nullable public Integer getSecondaryPhy();
+    method public int hashCode();
+    method @Nullable public Boolean isConnectableAdvertisement();
+    method @Nullable public Boolean isLegacyAdvertisement();
+    method public void removeAllDevicePropertiesChangedListeners();
+    method public void removeDevicePropertiesChangedListener(com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DevicePropertiesChangedCallback);
+    method public void setRssi(int);
+    method public String toString();
+  }
+
+  public enum FitbitBluetoothDevice.DeviceOrigin {
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DeviceOrigin BONDED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DeviceOrigin CONNECTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DeviceOrigin SCANNED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DeviceOrigin UNKNOWN;
+  }
+
+  public static interface FitbitBluetoothDevice.DevicePropertiesChangedCallback {
+    method public void onBluetoothPeripheralDevicePropertiesChanged(@NonNull com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice);
+  }
+
+  public class FitbitGatt {
+    method @kotlin.jvm.Synchronized public final void addBackgroundScannedDeviceConnection(@Nullable @Nullable com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice device);
+    method @kotlin.jvm.Synchronized public final void addBackgroundScannedDeviceConnection(@Nullable ScanResult result);
+    method public final void addDeviceAddressFilter(@Nullable java.lang.String deviceAddress);
+    method public final void addDeviceNameScanFilter(@Nullable java.lang.String deviceName);
+    method public final void addFilterUsingServiceData(@NonNull ParcelUuid serviceUUID, @Nullable byte[] serviceData, @Nullable byte[] serviceDataMask);
+    method public final void addScanRssiFilter(int minRssi);
+    method public final void addScanServiceUUIDWithMaskFilter(@NonNull ParcelUuid service, @NonNull ParcelUuid mask);
+    method @kotlin.jvm.Synchronized public final void addScannedDevice(@NonNull com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice device);
+    method public static final boolean atLeastSDK(int buildVersion);
+    method public void bluetoothOff();
+    method public void bluetoothOn();
+    method @KotlinOnly public final boolean bluetoothRadioIsOn();
+    method public void bluetoothTurningOff();
+    method public void bluetoothTurningOn();
+    method public final void cancelHighPriorityScan(@Nullable Context context);
+    method public final void cancelPeriodicalScan(@Nullable Context context);
+    method public final void cancelScan(@Nullable Context context);
+    method @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.Companion.NONE) public final void clearConnectionsMap();
+    method public final void connectToScannedDevice(@NonNull BluetoothDevice device, @NonNull com.fitbit.bluetooth.fbgatt.GattTransactionCallback callback);
+    method @VisibleForTesting public final void connectToScannedDevice(@NonNull com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice fitDevice, boolean shouldMock, @NonNull com.fitbit.bluetooth.fbgatt.GattTransactionCallback callback);
+    method public final void dispatchScanFailure(@NonNull com.fitbit.bluetooth.fbgatt.ScanFailure failure);
+    method @VisibleForTesting public final void doDecrementAndInvalidateClosedConnections();
+    method @NonNull protected final BluetoothAdapter getAdapter(@NonNull Context context);
+    method @NonNull public final com.fitbit.bluetooth.fbgatt.advertise.BitGattAdvertiser getAdvertiser();
+    method @NonNull public final com.fitbit.bluetooth.fbgatt.AlwaysConnectedScanner getAlwaysConnectedScanner();
+    method @Nullable public final Context getAppContext();
+    method @NonNull public final BluetoothDevice getBluetoothDevice(@Nullable java.lang.String macAddress);
+    method @Nullable public final com.fitbit.bluetooth.fbgatt.GattClientCallback getClientCallback();
+    method @Nullable public final com.fitbit.bluetooth.fbgatt.GattConnection getConnection(@Nullable BluetoothDevice device);
+    method @Nullable public final com.fitbit.bluetooth.fbgatt.GattConnection getConnection(@Nullable com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice device);
+    method @Nullable public final com.fitbit.bluetooth.fbgatt.GattConnection getConnectionForAddress(@Nullable @Nullable java.lang.String bluetoothAddress);
+    method @Deprecated @Nullable public final com.fitbit.bluetooth.fbgatt.GattConnection getConnectionForBluetoothAddress(@NonNull Context context, @Nullable java.lang.String bluetoothAddress);
+    method @Nullable public final com.fitbit.bluetooth.fbgatt.GattConnection getConnectionForBluetoothAddress(@Nullable java.lang.String bluetoothAddress);
+    method @NonNull public final ConcurrentHashMap<com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice,com.fitbit.bluetooth.fbgatt.GattConnection> getConnectionMap();
+    method @NonNull public final HandlerThread getFitbitGattAsyncOperationThread();
+    method @NonNull public static final com.fitbit.bluetooth.fbgatt.FitbitGatt getInstance();
+    method @NonNull public final java.util.List<com.fitbit.bluetooth.fbgatt.GattConnection> getMatchingConnectionsForDeviceNames(@Nullable @Nullable java.util.List<java.lang.String> names);
+    method @NonNull public final java.util.List<com.fitbit.bluetooth.fbgatt.GattConnection> getMatchingConnectionsForServices(@Nullable @Nullable java.util.List<? extends UUID> services);
+    method @NonNull @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.Companion.NONE) public final java.util.List<com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice> getNewlyScannedDevicesOnly();
+    method @Nullable public final com.fitbit.bluetooth.fbgatt.PeripheralScanner getPeripheralScanner();
+    method @NonNull public final java.util.List<ScanFilter> getScanFilters();
+    method @Nullable public final com.fitbit.bluetooth.fbgatt.GattServerConnection getServer();
+    method @Nullable public final com.fitbit.bluetooth.fbgatt.GattServerCallback getServerCallback();
+    method @InaccessibleFromKotlin public final boolean isBluetoothOn();
+    method @kotlin.jvm.Synchronized public final boolean isDeviceInConnections(@NonNull com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice device);
+    method public final boolean isExtendedScanEnabled();
+    method public final boolean isPendingIntentScanning();
+    method public final boolean isPeriodicalScanEnabled();
+    method public final boolean isScanning();
+    method @InaccessibleFromKotlin @kotlin.jvm.Synchronized public final boolean isStarted();
+    method public final void notifyListenersOfConnectionDisconnected(@NonNull com.fitbit.bluetooth.fbgatt.GattConnection connection);
+    method public void onFitbitDeviceFound(@NonNull com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice device);
+    method public void onPendingIntentScanStatusChanged(boolean isScanning);
+    method public void onScanStatusChanged(boolean isScanning);
+    method @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.Companion.PACKAGE_PRIVATE) @kotlin.jvm.Synchronized public final void putConnectionIntoDevices(@NonNull com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice device, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection conn);
+    method public final void registerGattEventListener(@NonNull com.fitbit.bluetooth.fbgatt.FitbitGatt.FitbitGattCallback callback);
+    method public final void registerGattServerListener(@NonNull com.fitbit.bluetooth.fbgatt.GattServerListener listener);
+    method public final void resetScanFilters();
+    method @VisibleForTesting public final void setBluetoothListener(@Nullable com.fitbit.bluetooth.fbgatt.BluetoothRadioStatusListener listener);
+    method @NonNull public final java.util.List<java.lang.String> setDeviceNameFiltersFromYaml(@NonNull File file);
+    method public final void setDeviceNameScanFilters(@Nullable java.util.List<java.lang.String> deviceNameFilters);
+    method public final void setExtendedScanEnabled(boolean enabled);
+    method @VisibleForTesting public final void setGattServer(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection gattServer);
+    method public final void setScanServiceUuidFilters(@Nullable java.util.List<? extends ParcelUuid> uuidFilters);
+    method public final void setScannerMockMode(boolean mockMode);
+    method public final void setStarted();
+    method @kotlin.jvm.Synchronized public final void start(@NonNull Context context);
+    method @Nullable public final PendingIntent startBackgroundScan(@NonNull Context context, @NonNull Intent broadcastIntent, @NonNull @NonNull java.util.List<java.lang.String> macAddresses);
+    method public final boolean startHighPriorityScan(@NonNull Context context);
+    method public final boolean startPeriodicScan(@NonNull Context context);
+    method public final boolean startSystemManagedPendingIntentScan(@NonNull Context context, @NonNull @NonNull java.util.List<? extends ScanFilter> scanFilters);
+    method @WorkerThread @kotlin.jvm.Synchronized public final void startWithScanFilters(@NonNull Context context, @Nullable java.util.List<? extends ScanFilter> scanFilters, @Nullable com.fitbit.bluetooth.fbgatt.FitbitGatt.FitbitGattCallback callback);
+    method @WorkerThread @kotlin.jvm.Synchronized public final void startWithServices(@NonNull Context context, @Nullable java.util.List<? extends BluetoothGattService> services, @Nullable com.fitbit.bluetooth.fbgatt.FitbitGatt.FitbitGattCallback callback);
+    method @WorkerThread @kotlin.jvm.Synchronized public final void startWithServicesAndScanFilters(@Nullable Context context, @Nullable @Nullable java.util.List<? extends BluetoothGattService> services, @Nullable @Nullable java.util.List<? extends ScanFilter> filters, @Nullable com.fitbit.bluetooth.fbgatt.FitbitGatt.FitbitGattCallback callback);
+    method @KotlinOnly @kotlin.jvm.Synchronized public final boolean started();
+    method public final void stopBackgroundScan(@Nullable PendingIntent pendingIntent);
+    method public final void stopBackgroundScanWithRegularIntent(@NonNull Context context, @Nullable Intent regularIntent);
+    method public final void stopSystemManagedPendingIntentScan();
+    method @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.Companion.NONE) public final void unregisterAllGattEventListeners();
+    method public final void unregisterGattEventListener(@NonNull com.fitbit.bluetooth.fbgatt.FitbitGatt.FitbitGattCallback callback);
+    method public final void unregisterGattServerListener(@NonNull com.fitbit.bluetooth.fbgatt.GattServerListener listener);
+    property @VisibleForTesting public final com.fitbit.bluetooth.fbgatt.LowEnergyAclListener aclListener;
+    property @VisibleForTesting public final boolean isBluetoothOn;
+    property @VisibleForTesting public final ErrorType isStarted;
+    field @NonNull public static final com.fitbit.bluetooth.fbgatt.FitbitGatt.Companion Companion;
+    field public static final long MAX_TTL;
+    field @Nullable public com.fitbit.bluetooth.fbgatt.LowEnergyAclListener aclListener;
+    field @kotlin.jvm.Volatile public volatile boolean isBluetoothOn;
+    field @NonNull public final error.NonExistentClass isStarted;
+  }
+
+  public static final class FitbitGatt.Companion {
+    method public boolean atLeastSDK(int buildVersion);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.FitbitGatt getInstance();
+    property public long MAX_TTL;
+  }
+
+  public static interface FitbitGatt.FitbitGattCallback {
+    method public default void onAdvertiseStateChanged(boolean advertising, @Nullable @Nullable com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError error);
+    method @MainThread public void onBluetoothOff();
+    method @MainThread public void onBluetoothOn();
+    method public void onBluetoothPeripheralDisconnected(@NonNull com.fitbit.bluetooth.fbgatt.GattConnection connection);
+    method public void onBluetoothPeripheralDiscovered(@NonNull com.fitbit.bluetooth.fbgatt.GattConnection connection);
+    method @MainThread public void onBluetoothTurningOff();
+    method @MainThread public void onBluetoothTurningOn();
+    method public void onFitbitGattReady();
+    method public void onFitbitGattStartFailed();
+    method public void onPendingIntentScanStarted();
+    method public void onPendingIntentScanStopped();
+    method public default void onScanFailed(@NonNull com.fitbit.bluetooth.fbgatt.ScanFailure failure);
+    method public void onScanStarted();
+    method public void onScanStopped();
+  }
+
+  public class GattClientCallback {
+    method public void onCharacteristicChanged(BluetoothGatt, BluetoothGattCharacteristic);
+    method public void onCharacteristicChanged(BluetoothGatt, BluetoothGattCharacteristic, byte[]);
+    method public void onCharacteristicRead(BluetoothGatt, BluetoothGattCharacteristic, byte[], int);
+    method public void onCharacteristicRead(BluetoothGatt, BluetoothGattCharacteristic, int);
+    method public void onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int);
+    method public void onConnectionStateChange(BluetoothGatt, int, int);
+    method public void onConnectionUpdated(BluetoothGatt, int, int, int, int);
+    method public void onDescriptorRead(BluetoothGatt, BluetoothGattDescriptor, int);
+    method public void onDescriptorRead(BluetoothGatt, BluetoothGattDescriptor, int, byte[]);
+    method public void onDescriptorWrite(BluetoothGatt, BluetoothGattDescriptor, int);
+    method public void onMtuChanged(BluetoothGatt, int, int);
+    method public void onPhyRead(BluetoothGatt, int, int, int);
+    method public void onPhyUpdate(BluetoothGatt, int, int, int);
+    method public void onReadRemoteRssi(BluetoothGatt, int, int);
+    method public void onReliableWriteCompleted(BluetoothGatt, int);
+    method public void onServicesDiscovered(BluetoothGatt, int);
+  }
+
+  public interface GattClientListener {
+    method @Nullable public com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice getDevice();
+    method public void onCharacteristicChanged(BluetoothGatt, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy);
+    method public void onCharacteristicRead(BluetoothGatt, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy, int);
+    method public void onCharacteristicWrite(BluetoothGatt, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy, int);
+    method public void onConnectionStateChange(BluetoothGatt, int, int);
+    method public void onDescriptorRead(BluetoothGatt, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy, int);
+    method public void onDescriptorWrite(BluetoothGatt, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy, int);
+    method public void onMtuChanged(BluetoothGatt, int, int);
+    method public void onPhyRead(BluetoothGatt, int, int, int);
+    method public void onPhyUpdate(BluetoothGatt, int, int, int);
+    method public void onReadRemoteRssi(BluetoothGatt, int, int);
+    method public void onReliableWriteCompleted(BluetoothGatt, int);
+    method public void onServicesDiscovered(BluetoothGatt, int);
+  }
+
+  public class GattConnection {
+    ctor public GattConnection(@NonNull com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice device, @NonNull Looper mainLooper);
+    method @VisibleForTesting public final void addService(@NonNull BluetoothGattService service);
+    method @NonNull @kotlin.jvm.Synchronized public final com.fitbit.bluetooth.fbgatt.engine.Admit.GuardState checkTransaction(@NonNull com.fitbit.bluetooth.fbgatt.GattTransaction tx);
+    method public final void cleanUpConnection();
+    method public void close();
+    method @kotlin.jvm.Synchronized public final boolean connect();
+    method public final boolean connectedDeviceHostsService(@NonNull UUID serviceUuid);
+    method public final void disconnect();
+    method @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.Companion.PROTECTED) @kotlin.jvm.Synchronized public final void finish();
+    method @kotlin.jvm.Synchronized public final void gattRelease();
+    method @NonNull public final com.fitbit.bluetooth.fbgatt.TransactionQueueController getClientTransactionQueueController();
+    method @NonNull public final error.NonExistentClass getConnectionEventListeners();
+    method @NonNull public final com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice getDevice();
+    method public final long getDisconnectedTTL();
+    method @Nullable public final BluetoothGatt getGatt();
+    method @NonNull @kotlin.jvm.Synchronized public final com.fitbit.bluetooth.fbgatt.GattState getGattState();
+    method public final long getIntraTransactionDelay();
+    method @NonNull public final Handler getMainHandler();
+    method public final boolean getMockMode();
+    method @Nullable public final BluetoothGattService getRemoteGattService(@NonNull UUID uuid);
+    method @Nullable public final BluetoothGattCharacteristic getRemoteGattServiceCharacteristic(@NonNull UUID serviceUuid, @NonNull UUID characteristicUuid);
+    method public final boolean isConnected();
+    method public final void justClearGatt();
+    method @VisibleForTesting public final int numberOfEventListeners();
+    method public final void registerConnectionEventListener(@NonNull com.fitbit.bluetooth.fbgatt.ConnectionEventListener eventListener);
+    method public final void registerGattClientListener(@NonNull com.fitbit.bluetooth.fbgatt.GattClientListener clientListener);
+    method public final void resetDisconnectedTTL();
+    method public final void resetStates();
+    method public final void runTx(@NonNull com.fitbit.bluetooth.fbgatt.GattTransaction transaction, @NonNull com.fitbit.bluetooth.fbgatt.GattTransactionCallback callback);
+    method public final void setDisconnectedTTL(long value);
+    method public final void setIntraTransactionDelay(long txDelay);
+    method @VisibleForTesting public final void setMockMode(boolean mockMode);
+    method @kotlin.jvm.Synchronized public final void setState(@NonNull com.fitbit.bluetooth.fbgatt.GattState state);
+    method @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.Companion.NONE) public final void simulateDisconnect();
+    method @NonNull public java.lang.String toString();
+    method public final void unregisterConnectionEventListener(@NonNull com.fitbit.bluetooth.fbgatt.ConnectionEventListener eventListener);
+    method public final void unregisterGattClientListener(@NonNull com.fitbit.bluetooth.fbgatt.GattClientListener clientListener);
+    field @NonNull public static final com.fitbit.bluetooth.fbgatt.GattConnection.Companion Companion;
+  }
+
+  public static final class GattConnection.Companion {
+  }
+
+  public class GattServerCallback {
+    method public void onCharacteristicReadRequest(BluetoothDevice, int, int, BluetoothGattCharacteristic);
+    method public void onCharacteristicWriteRequest(BluetoothDevice, int, BluetoothGattCharacteristic, boolean, boolean, int, byte[]);
+    method public void onConnectionStateChange(BluetoothDevice, int, int);
+    method public void onDescriptorReadRequest(BluetoothDevice, int, int, BluetoothGattDescriptor);
+    method public void onDescriptorWriteRequest(BluetoothDevice, int, BluetoothGattDescriptor, boolean, boolean, int, byte[]);
+    method public void onExecuteWrite(BluetoothDevice, int, boolean);
+    method public void onMtuChanged(BluetoothDevice, int);
+    method public void onNotificationSent(BluetoothDevice, int);
+    method public void onPhyRead(BluetoothDevice, int, int, int);
+    method public void onPhyUpdate(BluetoothDevice, int, int, int);
+    method public void onServiceAdded(int, BluetoothGattService);
+  }
+
+  public class GattServerConnection {
+    ctor public GattServerConnection(@Nullable BluetoothGattServer server, @NonNull Looper looper);
+    method @NonNull @kotlin.jvm.Synchronized public final com.fitbit.bluetooth.fbgatt.engine.Admit.GuardState checkTransaction(@NonNull com.fitbit.bluetooth.fbgatt.GattTransaction tx);
+    method public void close();
+    method protected final void closeGattServer();
+    method public final void connect(@NonNull com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice device);
+    method public final void disconnect(@NonNull com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice device);
+    method @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.Companion.PROTECTED) @kotlin.jvm.Synchronized protected final void finish();
+    method @NonNull public final error.NonExistentClass getConnectionEventListeners();
+    method @NonNull @kotlin.jvm.Synchronized public final com.fitbit.bluetooth.fbgatt.GattState getGattState();
+    method public final long getIntraTransactionDelay();
+    method @NonNull public final Handler getMainHandler();
+    method @NonNull public final BluetoothGattServer getServer();
+    method @Nullable public final com.fitbit.bluetooth.fbgatt.TransactionQueueController getServerTransactionQueueController();
+    method public final boolean isConnected();
+    method public final boolean isDeviceConnected(@NonNull com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice device);
+    method public final void registerConnectionEventListener(@NonNull com.fitbit.bluetooth.fbgatt.ServerConnectionEventListener eventListener);
+    method public final void resetStates();
+    method public final void runTx(@NonNull com.fitbit.bluetooth.fbgatt.GattTransaction transaction, @NonNull com.fitbit.bluetooth.fbgatt.GattTransactionCallback callback);
+    method public final void setIntraTransactionDelay(long txDelay);
+    method @VisibleForTesting public final void setMockMode(boolean mockMode);
+    method @kotlin.jvm.Synchronized public final void setState(@NonNull com.fitbit.bluetooth.fbgatt.GattState state);
+    method @NonNull public java.lang.String toString();
+    method public final void unregisterConnectionEventListener(@NonNull com.fitbit.bluetooth.fbgatt.ServerConnectionEventListener eventListener);
+  }
+
+  public interface GattServerListener {
+    method public void onServerCharacteristicReadRequest(BluetoothDevice, int, int, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy);
+    method public void onServerCharacteristicWriteRequest(BluetoothDevice, int, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy, boolean, boolean, int, byte[]);
+    method public void onServerConnectionStateChange(BluetoothDevice, int, int);
+    method public void onServerDescriptorReadRequest(BluetoothDevice, int, int, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy);
+    method public void onServerDescriptorWriteRequest(BluetoothDevice, int, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy, boolean, boolean, int, byte[]);
+    method public void onServerExecuteWrite(BluetoothDevice, int, boolean);
+    method public void onServerMtuChanged(BluetoothDevice, int);
+    method public void onServerNotificationSent(BluetoothDevice, int);
+    method public void onServerPhyRead(BluetoothDevice, int, int, int);
+    method public void onServerPhyUpdate(BluetoothDevice, int, int, int);
+    method public void onServerServiceAdded(int, BluetoothGattService);
+  }
+
+  public class GattServerTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public GattServerTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public GattServerTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+  }
+
+  public enum GattState {
+    method public com.fitbit.bluetooth.fbgatt.StateType getStateType();
+    method public String toString();
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ADDING_SERVICE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ADDING_SERVICE_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ADDING_SERVICE_CHARACTERISTIC_DESCRIPTOR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ADD_SERVICE_CHARACTERISTIC_DESCRIPTOR_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ADD_SERVICE_CHARACTERISTIC_DESCRIPTOR_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ADD_SERVICE_CHARACTERISTIC_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ADD_SERVICE_CHARACTERISTIC_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ADD_SERVICE_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ADD_SERVICE_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState BT_OFF;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CLEARING_GATT_SERVER_SERVICES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CLEAR_GATT_SERVER_SERVICES_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CLOSED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CLOSE_GATT_CLIENT_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CLOSE_GATT_SERVER_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CLOSE_GATT_SERVER_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CLOSING_GATT_CLIENT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CLOSING_GATT_SERVER;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CONNECTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CONNECTING;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CREATE_BOND_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CREATE_BOND_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState CREATING_BOND;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState DISABLE_CHARACTERISTIC_NOTIFICATION_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState DISABLE_CHARACTERISTIC_NOTIFICATION_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState DISABLING_CHARACTERISTIC_NOTIFICATION;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState DISCONNECTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState DISCONNECTING;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState DISCOVERING;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState DISCOVERY_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState DISCOVERY_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ENABLE_CHARACTERISTIC_NOTIFICATION_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ENABLE_CHARACTERISTIC_NOTIFICATION_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState ENABLING_CHARACTERISTIC_NOTIFICATION;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState FAILURE_CONNECTING;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState FAILURE_DISCONNECTING;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState GATT_CONNECTION_STATE_SET_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState GATT_CONNECTION_STATE_SET_IN_PROGRESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState GATT_CONNECTION_STATE_SET_SUCCESSFULLY;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState GETTING_SERVER_SERVICES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState GET_SERVER_SERVICES_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState IDLE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState INDICATE_CHARACTERISTIC_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState INDICATE_CHARACTERISTIC_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState INDICATING_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState NOTIFYING_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState NOTIFY_CHARACTERISTIC_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState NOTIFY_CHARACTERISTIC_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READING_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READING_CURRENT_PHY;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READING_DESCRIPTOR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READING_RSSI;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READ_CHARACTERISTIC_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READ_CHARACTERISTIC_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READ_CURRENT_PHY_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READ_CURRENT_PHY_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READ_DESCRIPTOR_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READ_DESCRIPTOR_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READ_RSSI_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState READ_RSSI_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REFRESH_GATT_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REFRESH_GATT_IN_PROGRESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REFRESH_GATT_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REMOVE_SERVER_SERVICE_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REMOVE_SERVER_SERVICE_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REMOVING_SERVER_SERVICE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REQUESTING_CONNECTION_INTERVAL_CHANGE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REQUESTING_MTU;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REQUESTING_PHY_CHANGE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REQUEST_CONNECTION_INTERVAL_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REQUEST_CONNECTION_INTERVAL_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REQUEST_MTU_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REQUEST_MTU_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REQUEST_PHY_CHANGE_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState REQUEST_PHY_CHANGE_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState SENDING_SERVER_RESPONSE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState SEND_SERVER_RESPONSE_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState SEND_SERVER_RESPONSE_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState SERVER_CLOSED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState WRITE_CHARACTERISTIC_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState WRITE_CHARACTERISTIC_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState WRITE_DESCRIPTOR_FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState WRITE_DESCRIPTOR_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState WRITING_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.GattState WRITING_DESCRIPTOR;
+  }
+
+  public abstract class GattTransaction extends com.fitbit.bluetooth.fbgatt.GattServerCallback implements com.fitbit.bluetooth.fbgatt.GattClientListener com.fitbit.bluetooth.fbgatt.GattServerListener {
+    ctor public GattTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public GattTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    ctor public GattTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public GattTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method @Deprecated public void addPostCommitHook(com.fitbit.bluetooth.fbgatt.GattTransaction);
+    method @Deprecated public void addPreCommitHook(com.fitbit.bluetooth.fbgatt.GattTransaction);
+    method public boolean admitsRegardlessOfState();
+    method @CallSuper public void callCallbackWithTransactionResultAndRelease(com.fitbit.bluetooth.fbgatt.GattTransactionCallback, com.fitbit.bluetooth.fbgatt.TransactionResult);
+    method @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.PACKAGE_PRIVATE) public void commit(com.fitbit.bluetooth.fbgatt.GattTransactionCallback);
+    method protected com.fitbit.bluetooth.fbgatt.GattConnection getConnection();
+    method @Nullable public com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice getDevice();
+    method protected int getExecutedTransactions();
+    method protected com.fitbit.bluetooth.fbgatt.GattServerConnection getGattServer();
+    method public abstract String getName();
+    method @VisibleForTesting public ArrayList<com.fitbit.bluetooth.fbgatt.GattTransaction> getPostCommitHooks();
+    method @VisibleForTesting public ArrayList<com.fitbit.bluetooth.fbgatt.GattTransaction> getPreCommitHooks();
+    method public String getStateDump();
+    method public com.fitbit.bluetooth.fbgatt.GattState getSuccessState();
+    method protected long getTimeout();
+    method public boolean hasStarted();
+    method public void onCharacteristicChanged(BluetoothGatt, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy);
+    method public void onCharacteristicRead(BluetoothGatt, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy, int);
+    method public void onCharacteristicWrite(BluetoothGatt, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy, int);
+    method public void onConnectionStateChange(BluetoothGatt, int, int);
+    method public void onDescriptorRead(BluetoothGatt, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy, int);
+    method public void onDescriptorWrite(BluetoothGatt, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy, int);
+    method protected void onGattClientTransactionTimeout(com.fitbit.bluetooth.fbgatt.GattConnection);
+    method protected void onGattServerTransactionTimeout(com.fitbit.bluetooth.fbgatt.GattServerConnection);
+    method public void onMtuChanged(BluetoothGatt, int, int);
+    method public void onPhyRead(BluetoothGatt, int, int, int);
+    method public void onPhyUpdate(BluetoothGatt, int, int, int);
+    method public void onReadRemoteRssi(BluetoothGatt, int, int);
+    method public void onReliableWriteCompleted(BluetoothGatt, int);
+    method public void onServerCharacteristicReadRequest(BluetoothDevice, int, int, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy);
+    method public void onServerCharacteristicWriteRequest(BluetoothDevice, int, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy, boolean, boolean, int, byte[]);
+    method public void onServerConnectionStateChange(BluetoothDevice, int, int);
+    method public void onServerDescriptorReadRequest(BluetoothDevice, int, int, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy);
+    method public void onServerDescriptorWriteRequest(BluetoothDevice, int, com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy, boolean, boolean, int, byte[]);
+    method public void onServerExecuteWrite(BluetoothDevice, int, boolean);
+    method public void onServerMtuChanged(BluetoothDevice, int);
+    method public void onServerNotificationSent(BluetoothDevice, int);
+    method public void onServerPhyRead(BluetoothDevice, int, int, int);
+    method public void onServerPhyUpdate(BluetoothDevice, int, int, int);
+    method public void onServerServiceAdded(int, BluetoothGattService);
+    method public void onServicesDiscovered(BluetoothGatt, int);
+    method @CallSuper protected void release();
+    method @Deprecated public void removePostCommitHook(com.fitbit.bluetooth.fbgatt.GattTransaction);
+    method @Deprecated public void removePreCommitHook(com.fitbit.bluetooth.fbgatt.GattTransaction);
+    method protected void setTimeout(long);
+    method protected void transaction(com.fitbit.bluetooth.fbgatt.GattTransactionCallback);
+    field protected static final long DEFAULT_GATT_TRANSACTION_TIMEOUT;
+    field public com.fitbit.bluetooth.fbgatt.GattTransactionCallback callback;
+    field protected final CountDownLatch cdl;
+    field protected final Handler mainThreadHandler;
+    field protected com.fitbit.bluetooth.fbgatt.StrategyProvider strategyProvider;
+  }
+
+  public interface GattTransactionCallback {
+    method @MainThread public void onTransactionComplete(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult);
+  }
+
+  public class HandleIntentBasedScanResult {
+    ctor public HandleIntentBasedScanResult();
+    method public void onReceive(Context, Intent);
+  }
+
+  public class LowEnergyAclListener {
+    ctor public LowEnergyAclListener();
+    method public void onReceive(Context, Intent);
+  }
+
+  public class PeripheralScanner {
+    method public boolean isPendingIntentScanning();
+    method public boolean isPeriodicalScanEnabled();
+    method public boolean isScanning();
+  }
+
+  public enum ScanFailure {
+    method public int getFailReason();
+    method public static com.fitbit.bluetooth.fbgatt.ScanFailure getFailureForReason(int);
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.ScanFailure NO_ERROR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.ScanFailure SCAN_FAILED_ALREADY_STARTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.ScanFailure SCAN_FAILED_APPLICATION_REGISTRATION_FAILED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.ScanFailure SCAN_FAILED_FEATURE_UNSUPPORTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.ScanFailure SCAN_FAILED_INTERNAL_ERROR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.ScanFailure SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.ScanFailure SCAN_FAILED_SCANNING_TOO_FREQUENTLY;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.ScanFailure UNKNOWN;
+  }
+
+  public interface ScannerInterface {
+    method public default ScanSettings buildDefaultScanSettings(int);
+    method public void cleanup();
+    method public void flushPendingScanResults(ScanCallback);
+    method public boolean isBluetoothEnabled();
+    method public int startScan(@Nullable List<ScanFilter>, @Nullable ScanSettings, @NonNull PendingIntent);
+    method public void startScan(List<ScanFilter>, ScanSettings, ScanCallback);
+    method public void startScan(ScanCallback);
+    method public void stopScan(PendingIntent);
+    method public void stopScan(ScanCallback);
+  }
+
+  public interface ServerConnectionEventListener {
+    method public void onServerCharacteristicReadRequest(@NonNull BluetoothDevice, @NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattServerConnection);
+    method public void onServerCharacteristicWriteRequest(@NonNull BluetoothDevice, @NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattServerConnection);
+    method public void onServerConnectionStateChanged(@NonNull BluetoothDevice, @NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattServerConnection);
+    method public void onServerDescriptorReadRequest(@NonNull BluetoothDevice, @NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattServerConnection);
+    method public void onServerDescriptorWriteRequest(@NonNull BluetoothDevice, @NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattServerConnection);
+    method public void onServerMtuChanged(@NonNull BluetoothDevice, @NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattServerConnection);
+  }
+
+  public enum Situation {
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.Situation CLEAR_GATT_SERVER_SERVICES_DEVICE_FUNKY_BT_IMPL;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.Situation DEFAULT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.Situation DELAY_ANDROID_SUBSCRIPTION_EVENT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.Situation TRACKER_WENT_AWAY_DURING_GATT_OPERATION;
+  }
+
+  public enum StateType {
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.StateType ERROR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.StateType IDLE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.StateType IN_PROGRESS;
+  }
+
+  public final class StrategyProvider {
+    ctor public StrategyProvider();
+    method @VisibleForTesting public boolean currentDeviceHasEqualDefinedProperties(@NonNull com.fitbit.bluetooth.fbgatt.AndroidDevice currentDevice, @Nullable com.fitbit.bluetooth.fbgatt.AndroidDevice strategyDevice);
+    method @Nullable @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.Companion.PACKAGE_PRIVATE) public com.fitbit.bluetooth.fbgatt.strategies.Strategy getStrategyForPhoneAndGattConnection(@NonNull com.fitbit.bluetooth.fbgatt.AndroidDevice currentDevice, @Nullable com.fitbit.bluetooth.fbgatt.AndroidDevice strategyDevice, @Nullable com.fitbit.bluetooth.fbgatt.GattConnection conn, @NonNull com.fitbit.bluetooth.fbgatt.Situation situation);
+    method @Nullable public com.fitbit.bluetooth.fbgatt.strategies.Strategy getStrategyForPhoneAndGattConnection(@Nullable com.fitbit.bluetooth.fbgatt.AndroidDevice strategyDevice, @Nullable com.fitbit.bluetooth.fbgatt.GattConnection conn, @NonNull com.fitbit.bluetooth.fbgatt.Situation situation);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.AndroidDevice getUnmatchableDevice();
+    field @NonNull public static final com.fitbit.bluetooth.fbgatt.StrategyProvider.Companion Companion;
+  }
+
+  public static final class StrategyProvider.Companion {
+  }
+
+  public class TransactionQueueController {
+  }
+
+  public class TransactionResult {
+    method @Nullable public final UUID getCharacteristicUuid();
+    method @Nullable public final byte[] getData();
+    method @Nullable public final UUID getDescriptorUuid();
+    method public final int getMtu();
+    method public final int getOffset();
+    method public final int getRequestId();
+    method @NonNull public final java.lang.String getResponseCodeString();
+    method @Nullable public final com.fitbit.bluetooth.fbgatt.GattState getResultState();
+    method @NonNull public final com.fitbit.bluetooth.fbgatt.TransactionResult.TransactionResultStatus getResultStatus();
+    method public final int getRssi();
+    method public final int getRxPhy();
+    method @Nullable public final UUID getServiceUuid();
+    method @NonNull public final java.util.List<BluetoothGattService> getServices();
+    method @Nullable public final java.lang.String getTransactionName();
+    method @NonNull public final java.util.List<com.fitbit.bluetooth.fbgatt.TransactionResult> getTransactionResults();
+    method public final int getTxPhy();
+    method public final boolean isPreparedWrite();
+    method public final boolean isResponseRequired();
+    method public final void setData(@Nullable byte[] data);
+    method @NonNull public java.lang.String toString();
+    property public final com.fitbit.bluetooth.fbgatt.GattState resultState;
+    property public final com.fitbit.bluetooth.fbgatt.TransactionResult.TransactionResultStatus resultStatus;
+    field @Nullable public final com.fitbit.bluetooth.fbgatt.GattState resultState;
+    field @Nullable public final com.fitbit.bluetooth.fbgatt.TransactionResult.TransactionResultStatus resultStatus;
+  }
+
+  public static final class TransactionResult.Builder {
+    ctor public TransactionResult.Builder();
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder addTransactionResult(@Nullable com.fitbit.bluetooth.fbgatt.TransactionResult transactionResult);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder addTransactionResults(@Nullable java.util.List<? extends com.fitbit.bluetooth.fbgatt.TransactionResult> results);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult build();
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder characteristicUuid(@NonNull UUID characteristicUuid);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder data(@Nullable byte[] data);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder descriptorUuid(@NonNull UUID descriptorUuid);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder gattState(@Nullable com.fitbit.bluetooth.fbgatt.GattState state);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder mtu(int mtu);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder offset(int offset);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder preparedWrite(boolean preparedWrite);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder requestId(int requestId);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder responseRequired(boolean responseRequired);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder responseStatus(int code);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder resultStatus(@Nullable com.fitbit.bluetooth.fbgatt.TransactionResult.TransactionResultStatus resultStatus);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder rssi(int rssi);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder rxPhy(int rxPhy);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder serverServices(@Nullable java.util.List<? extends BluetoothGattService> services);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder serviceUuid(@NonNull UUID serviceUuid);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder transactionName(@Nullable @Nullable java.lang.String transactionName);
+    method @NonNull public com.fitbit.bluetooth.fbgatt.TransactionResult.Builder txPhy(int txPhy);
+  }
+
+  public enum TransactionResult.TransactionResultStatus {
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.TransactionResult.TransactionResultStatus FAILURE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.TransactionResult.TransactionResultStatus INVALID_STATE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.TransactionResult.TransactionResultStatus SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.TransactionResult.TransactionResultStatus TIMEOUT;
+  }
+
+}
+
+package com.fitbit.bluetooth.fbgatt.advertise {
+
+  public enum AdvertiseError {
+    method @NonNull public static com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError fromPlatform(int code);
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError ALREADY_STARTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError DATA_TOO_LARGE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError FEATURE_UNSUPPORTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError INTERNAL_ERROR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError TOO_MANY_ADVERTISERS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError bluetoothOff;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError missingPermission;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError serverNotReady;
+    field @NonNull public static final com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError.Companion Companion;
+  }
+
+  public static final class AdvertiseError.Companion {
+    method @NonNull public com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError fromPlatform(int code);
+  }
+
+  public final class AdvertiseRequest {
+    ctor public AdvertiseRequest();
+    ctor public AdvertiseRequest(boolean connectable);
+    ctor public AdvertiseRequest(boolean connectable, boolean scannable);
+    ctor public AdvertiseRequest(boolean connectable, boolean scannable, boolean legacy);
+    ctor public AdvertiseRequest(boolean connectable, boolean scannable, boolean legacy, int primaryPhy);
+    ctor public AdvertiseRequest(boolean connectable, boolean scannable, boolean legacy, int primaryPhy, int secondaryPhy);
+    ctor public AdvertiseRequest(boolean connectable, boolean scannable, boolean legacy, int primaryPhy, int secondaryPhy, int interval);
+    ctor public AdvertiseRequest(boolean connectable, boolean scannable, boolean legacy, int primaryPhy, int secondaryPhy, int interval, int txPowerLevel);
+    ctor public AdvertiseRequest(boolean connectable, boolean scannable, boolean legacy, int primaryPhy, int secondaryPhy, int interval, int txPowerLevel, @NonNull AdvertiseData advertiseData);
+    ctor public AdvertiseRequest(boolean connectable, boolean scannable, boolean legacy, int primaryPhy, int secondaryPhy, int interval, int txPowerLevel, @NonNull AdvertiseData advertiseData, @NonNull AdvertiseData scanResponse);
+    method public boolean component1();
+    method public boolean component2();
+    method public boolean component3();
+    method public int component4();
+    method public int component5();
+    method public int component6();
+    method public int component7();
+    method @NonNull public AdvertiseData component8();
+    method @NonNull public AdvertiseData component9();
+    method @NonNull public com.fitbit.bluetooth.fbgatt.advertise.AdvertiseRequest copy(boolean connectable, boolean scannable, boolean legacy, int primaryPhy, int secondaryPhy, int interval, int txPowerLevel, @NonNull AdvertiseData advertiseData, @NonNull AdvertiseData scanResponse);
+    method public boolean equals(@Nullable java.lang.Object other);
+    method @InaccessibleFromKotlin @NonNull public AdvertiseData getAdvertiseData();
+    method @InaccessibleFromKotlin public boolean getConnectable();
+    method @InaccessibleFromKotlin public int getInterval();
+    method @InaccessibleFromKotlin public boolean getLegacy();
+    method @InaccessibleFromKotlin public int getPrimaryPhy();
+    method @InaccessibleFromKotlin @NonNull public AdvertiseData getScanResponse();
+    method @InaccessibleFromKotlin public boolean getScannable();
+    method @InaccessibleFromKotlin public int getSecondaryPhy();
+    method @InaccessibleFromKotlin public int getTxPowerLevel();
+    method public int hashCode();
+    method @NonNull public java.lang.String toString();
+    property public ErrorType advertiseData;
+    property public boolean connectable;
+    property public int interval;
+    property public boolean legacy;
+    property public int primaryPhy;
+    property public ErrorType scanResponse;
+    property public boolean scannable;
+    property public int secondaryPhy;
+    property public int txPowerLevel;
+  }
+
+  public final class BitGattAdvertiser {
+    method public boolean isAdvertising();
+    method @Nullable public com.fitbit.bluetooth.fbgatt.advertise.AdvertiseError start(@NonNull com.fitbit.bluetooth.fbgatt.advertise.AdvertiseRequest request);
+    method public void stop();
+  }
+
+}
+
+package com.fitbit.bluetooth.fbgatt.btcopies {
+
+  public class BluetoothGattCharacteristicCopy {
+    ctor public BluetoothGattCharacteristicCopy(UUID, int, int);
+    method public boolean addDescriptor(com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy);
+    method public com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy getDescriptor(UUID);
+    method public List<com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy> getDescriptors();
+    method public Float getFloatValue(int, int);
+    method public int getInstanceId();
+    method public Integer getIntValue(int, int);
+    method public int getPermissions();
+    method public int getProperties();
+    method public com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattServiceCopy getService();
+    method public String getStringValue(int);
+    method public UUID getUuid();
+    method public byte[] getValue();
+    method public int getWriteType();
+    method public boolean setValue(byte[]);
+    method public boolean setValue(int, int, int);
+    method public boolean setValue(int, int, int, int);
+    method public boolean setValue(String);
+    method public void setWriteType(int);
+    field public static final int FORMAT_FLOAT = 52; // 0x34
+    field public static final int FORMAT_SFLOAT = 50; // 0x32
+    field public static final int FORMAT_SINT16 = 34; // 0x22
+    field public static final int FORMAT_SINT32 = 36; // 0x24
+    field public static final int FORMAT_SINT8 = 33; // 0x21
+    field public static final int FORMAT_UINT16 = 18; // 0x12
+    field public static final int FORMAT_UINT32 = 20; // 0x14
+    field public static final int FORMAT_UINT8 = 17; // 0x11
+    field public static final int PERMISSION_READ = 1; // 0x1
+    field public static final int PERMISSION_READ_ENCRYPTED = 2; // 0x2
+    field public static final int PERMISSION_READ_ENCRYPTED_MITM = 4; // 0x4
+    field public static final int PERMISSION_WRITE = 16; // 0x10
+    field public static final int PERMISSION_WRITE_ENCRYPTED = 32; // 0x20
+    field public static final int PERMISSION_WRITE_ENCRYPTED_MITM = 64; // 0x40
+    field public static final int PERMISSION_WRITE_SIGNED = 128; // 0x80
+    field public static final int PERMISSION_WRITE_SIGNED_MITM = 256; // 0x100
+    field public static final int PROPERTY_BROADCAST = 1; // 0x1
+    field public static final int PROPERTY_EXTENDED_PROPS = 128; // 0x80
+    field public static final int PROPERTY_INDICATE = 32; // 0x20
+    field public static final int PROPERTY_NOTIFY = 16; // 0x10
+    field public static final int PROPERTY_READ = 2; // 0x2
+    field public static final int PROPERTY_SIGNED_WRITE = 64; // 0x40
+    field public static final int PROPERTY_WRITE = 8; // 0x8
+    field public static final int PROPERTY_WRITE_NO_RESPONSE = 4; // 0x4
+    field public static final int WRITE_TYPE_DEFAULT = 2; // 0x2
+    field public static final int WRITE_TYPE_NO_RESPONSE = 1; // 0x1
+    field public static final int WRITE_TYPE_SIGNED = 4; // 0x4
+  }
+
+  public class BluetoothGattDescriptorCopy {
+    ctor public BluetoothGattDescriptorCopy(UUID, int);
+    ctor public BluetoothGattDescriptorCopy(UUID, int, int);
+    method public com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy getCharacteristic();
+    method public int getPermissions();
+    method public UUID getUuid();
+    method public byte[] getValue();
+    method public boolean setValue(byte[]);
+    field public static final byte[] DISABLE_NOTIFICATION_VALUE;
+    field public static final byte[] ENABLE_INDICATION_VALUE;
+    field public static final byte[] ENABLE_NOTIFICATION_VALUE;
+    field public static final int PERMISSION_READ = 1; // 0x1
+    field public static final int PERMISSION_READ_ENCRYPTED = 2; // 0x2
+    field public static final int PERMISSION_READ_ENCRYPTED_MITM = 4; // 0x4
+    field public static final int PERMISSION_WRITE = 16; // 0x10
+    field public static final int PERMISSION_WRITE_ENCRYPTED = 32; // 0x20
+    field public static final int PERMISSION_WRITE_ENCRYPTED_MITM = 64; // 0x40
+    field public static final int PERMISSION_WRITE_SIGNED = 128; // 0x80
+    field public static final int PERMISSION_WRITE_SIGNED_MITM = 256; // 0x100
+  }
+
+  public class BluetoothGattServiceCopy {
+    ctor public BluetoothGattServiceCopy(UUID, int);
+    ctor public BluetoothGattServiceCopy(UUID, int, int);
+    method public boolean addCharacteristic(com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy);
+    method public boolean addService(com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattServiceCopy);
+    method public com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy getCharacteristic(UUID);
+    method public List<com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy> getCharacteristics();
+    method public List<com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattServiceCopy> getIncludedServices();
+    method public int getType();
+    method public UUID getUuid();
+    field public static final int SERVICE_TYPE_PRIMARY = 0; // 0x0
+    field public static final int SERVICE_TYPE_SECONDARY = 1; // 0x1
+  }
+
+}
+
+package com.fitbit.bluetooth.fbgatt.descriptors {
+
+  public class CharacteristicNamespaceDescriptor {
+    ctor public CharacteristicNamespaceDescriptor();
+  }
+
+  public class CharacteristicNotificationDescriptor {
+    ctor public CharacteristicNotificationDescriptor();
+  }
+
+}
+
+package com.fitbit.bluetooth.fbgatt.engine {
+
+  public final class Admit {
+    method @NonNull public static com.fitbit.bluetooth.fbgatt.engine.Admit.GuardState check(@NonNull com.fitbit.bluetooth.fbgatt.GattState currentState, @NonNull com.fitbit.bluetooth.fbgatt.GattState successState, boolean admitsRegardlessOfState);
+    field @NonNull public static final com.fitbit.bluetooth.fbgatt.engine.Admit INSTANCE;
+  }
+
+  public enum Admit.GuardState {
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.engine.Admit.GuardState INVALID_TARGET_STATE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.engine.Admit.GuardState OK;
+  }
+
+  public final class ConnectionEngine {
+    ctor public ConnectionEngine(@NonNull java.lang.String threadName);
+    method public void awaitLatch(@NonNull CountDownLatch latch, long timeoutMs);
+    method public void clearQueue();
+    method public static void deliverOnMainLooper(@NonNull Looper looper, @NonNull Handler handler, @NonNull Runnable action);
+    method @NonNull public Thread getTransactionThread();
+    method public boolean isQueueThreadStopped();
+    method @NonNull public static Runnable pollMain(@NonNull Thread thread, long timeoutMs);
+    method public void queueTransaction(@NonNull Runnable tx);
+    method public void scheduleTimeout(@NonNull Handler handler, long delayMs, @NonNull Runnable block);
+    method @kotlin.jvm.Synchronized public void start();
+    method @kotlin.jvm.Synchronized public void stop();
+    field @NonNull public static final com.fitbit.bluetooth.fbgatt.engine.ConnectionEngine.Companion Companion;
+  }
+
+  public static final class ConnectionEngine.Companion {
+    method public void deliverOnMainLooper(@NonNull Looper looper, @NonNull Handler handler, @NonNull Runnable action);
+    method @NonNull public Runnable pollMain(@NonNull Thread thread, long timeoutMs);
+  }
+
+}
+
+package com.fitbit.bluetooth.fbgatt.logging {
+
+  public class BitgattDebugTree extends timber.log.Timber.DebugTree {
+    ctor public BitgattDebugTree();
+    method protected void log(int, @Nullable String, @NonNull String, @Nullable Throwable);
+  }
+
+  public class BitgattReleaseTree extends timber.log.Timber.Tree {
+    ctor public BitgattReleaseTree();
+    method protected void log(int, @Nullable String, @NonNull String, @Nullable Throwable);
+  }
+
+}
+
+package com.fitbit.bluetooth.fbgatt.strategies {
+
+  public class BluetoothOffClearGattServerStrategy extends com.fitbit.bluetooth.fbgatt.strategies.Strategy {
+    ctor public BluetoothOffClearGattServerStrategy(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.AndroidDevice);
+    method public void applyStrategy();
+  }
+
+  public class DelaySubscriptionResultStrategy extends com.fitbit.bluetooth.fbgatt.strategies.Strategy {
+    ctor public DelaySubscriptionResultStrategy(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.AndroidDevice);
+    method public void applyStrategy();
+  }
+
+  public class HandleTrackerVanishingUnderGattOperationStrategy extends com.fitbit.bluetooth.fbgatt.strategies.Strategy {
+    ctor public HandleTrackerVanishingUnderGattOperationStrategy(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.AndroidDevice);
+    method public void applyStrategy();
+  }
+
+  public abstract class Strategy {
+    method public abstract void applyStrategy();
+    method public void applyStrategy(com.fitbit.bluetooth.fbgatt.GattTransaction, com.fitbit.bluetooth.fbgatt.TransactionResult, com.fitbit.bluetooth.fbgatt.GattTransactionCallback);
+  }
+
+}
+
+package com.fitbit.bluetooth.fbgatt.tools {
+
+  public class GattPlugin implements com.fitbit.bluetooth.fbgatt.ConnectionEventListener com.facebook.stetho.dumpapp.DumperPlugin com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice.DevicePropertiesChangedCallback com.fitbit.bluetooth.fbgatt.FitbitGatt.FitbitGattCallback {
+    ctor public GattPlugin(Context);
+    method public void dump(com.facebook.stetho.dumpapp.DumperContext) throws com.facebook.stetho.dumpapp.DumpException;
+    method public String getName();
+    method protected void log(com.facebook.stetho.dumpapp.DumperContext, String);
+    method protected void logError(com.facebook.stetho.dumpapp.DumperContext, Throwable);
+    method protected void logNewLine(com.facebook.stetho.dumpapp.DumperContext);
+    method protected JSONObject makeJsonObject(Map<String,Object>);
+    method public void onBluetoothOff();
+    method public void onBluetoothOn();
+    method public void onBluetoothPeripheralDevicePropertiesChanged(com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice);
+    method public void onBluetoothPeripheralDisconnected(com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onBluetoothPeripheralDiscovered(@NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onBluetoothTurningOff();
+    method public void onBluetoothTurningOn();
+    method public void onClientCharacteristicChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onClientConnectionStateChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onFitbitGattReady();
+    method public void onFitbitGattStartFailed();
+    method public void onMtuChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onPendingIntentScanStarted();
+    method public void onPendingIntentScanStopped();
+    method public void onPhyChanged(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    method public void onScanStarted();
+    method public void onScanStopped();
+    method public void onServicesDiscovered(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
+    field protected static final String COMMAND_KEY = "command";
+    field protected static final String ERROR_KEY = "error";
+    field protected static final String FAIL_STATUS = "fail";
+    field protected static final String PASS_STATUS = "pass";
+    field protected static final String RESULT_KEY = "result";
+    field protected static final String STATUS_KEY = "status";
+    field protected final Context context;
+    field protected boolean isJsonFormat;
+  }
+
+  public enum GattPlugin.GattCommand {
+    method public String getDescription();
+    method @Nullable public static com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand getEnum(@Nullable String);
+    method public String getFullName();
+    method public String getShortName();
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand ADD_LOCAL_GATT_SERVER_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand ADD_LOCAL_GATT_SERVER_CHARACTERISTIC_DESCRIPTOR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand ADD_LOCAL_GATT_SERVER_SERVICE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand CLEAR_LOCAL_GATT_SERVER_SERVICES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand CLOSE_GATT_CLIENT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand FIND_NEARBY_DEVICES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand FIND_NEARBY_DEVICES_WITH_BACKGROUND_SCAN;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand GATT_CLIENT_CONNECT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand GATT_CLIENT_DISCONNECT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand GATT_CLIENT_DISCOVER_SERVICES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand GATT_SERVER_CONNECT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand GATT_SERVER_DISCONNECT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand HELP;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand INIT_GATT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand NOTIFY_GATT_SERVER_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand READ_GATT_CLIENT_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand READ_GATT_CLIENT_DESCRIPTOR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand READ_GATT_CLIENT_PHY;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand READ_GATT_CLIENT_RSSI;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand READ_GATT_LIB_VERSION;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand READ_LOCAL_GATT_SERVER_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand READ_LOCAL_GATT_SERVER_CHARACTERISTIC_DESCRIPTOR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand READ_NUM_GATT_ACTIVE_CONNECTIONS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand REFRESH_GATT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand REMOVE_GATT_SERVER_SERVICE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand REQUEST_GATT_CLIENT_CONNECTION_INTERVAL;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand REQUEST_GATT_CLIENT_MTU;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand REQUEST_GATT_CLIENT_PHY;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand SET_JSON_OUTPUT_FORMAT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand SHOW_GATT_SERVER_SERVICES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand SHOW_GATT_SERVER_SERVICE_CHARACTERISTICS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand SHOW_REMOTE_SERVICES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand STOP_BACKGROUND_SCAN;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand SUBSCRIBE_TO_GATT_CLIENT_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand UNSUBSCRIBE_FROM_GATT_CLIENT_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand WRITE_GATT_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand WRITE_GATT_DESCRIPTOR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand WRITE_GATT_SERVER_RESPONSE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand WRITE_LOCAL_GATT_SERVER_CHARACTERISTIC;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tools.GattPlugin.GattCommand WRITE_LOCAL_GATT_SERVER_CHARACTERISTIC_DESCRIPTOR;
+  }
+
+}
+
+package com.fitbit.bluetooth.fbgatt.tx {
+
+  public class AddGattServerServiceCharacteristicDescriptorTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public AddGattServerServiceCharacteristicDescriptorTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic, BluetoothGattDescriptor);
+    ctor public AddGattServerServiceCharacteristicDescriptorTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic, BluetoothGattDescriptor, long);
+  }
+
+  public class AddGattServerServiceCharacteristicTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public AddGattServerServiceCharacteristicTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic);
+    ctor public AddGattServerServiceCharacteristicTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic, long);
+  }
+
+  public class AddGattServerServiceTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public AddGattServerServiceTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService);
+    ctor public AddGattServerServiceTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, long);
+  }
+
+  public class ClearServerServicesTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public ClearServerServicesTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public ClearServerServicesTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+  }
+
+  public class CloseGattServerTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public CloseGattServerTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public CloseGattServerTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+  }
+
+  public class CloseGattTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public CloseGattTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public CloseGattTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+  }
+
+  public class CreateBondTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public CreateBondTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public CreateBondTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+    field public static final String NAME = "CreateBondTransaction";
+  }
+
+  public class GattClientDiscoverServicesTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public GattClientDiscoverServicesTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public GattClientDiscoverServicesTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+    field public static final String NAME = "GattClientDiscoverServices";
+  }
+
+  public class GattClientRefreshGattTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public GattClientRefreshGattTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public GattClientRefreshGattTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+    field public static final String NAME = "GattClientRefreshGattTransaction";
+  }
+
+  public class GattConnectTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public GattConnectTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public GattConnectTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+    field public static final String NAME = "GattConnectTransaction";
+  }
+
+  public class GattDisconnectTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public GattDisconnectTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public GattDisconnectTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+    field public static final String NAME = "GattDisconnectionTransaction";
+  }
+
+  public class GattServerConnectTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public GattServerConnectTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice);
+    ctor public GattServerConnectTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice, long);
+  }
+
+  public class GattServerDisconnectTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public GattServerDisconnectTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice);
+    ctor public GattServerDisconnectTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice, long);
+  }
+
+  public class GetGattServerServicesTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public GetGattServerServicesTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public GetGattServerServicesTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+  }
+
+  public class NotifyGattServerCharacteristicTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public NotifyGattServerCharacteristicTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, boolean);
+    ctor public NotifyGattServerCharacteristicTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, boolean, long);
+    field protected final BluetoothGattCharacteristic characteristic;
+  }
+
+  public class ReadGattCharacteristicTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public ReadGattCharacteristicTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic);
+    ctor public ReadGattCharacteristicTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, long);
+    method public String getName();
+    field public static final String NAME = "ReadGattCharacteristicTransaction";
+  }
+
+  public class ReadGattClientPhyTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public ReadGattClientPhyTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public ReadGattClientPhyTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+    field public static final String NAME = "ReadGattClientPhyTransaction";
+  }
+
+  public class ReadGattDescriptorTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public ReadGattDescriptorTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattDescriptor);
+    ctor public ReadGattDescriptorTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattDescriptor, long);
+    method public String getName();
+  }
+
+  public class ReadGattServerCharacteristicDescriptorValueTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public ReadGattServerCharacteristicDescriptorValueTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic, BluetoothGattDescriptor);
+    ctor public ReadGattServerCharacteristicDescriptorValueTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic, BluetoothGattDescriptor, long);
+  }
+
+  public class ReadGattServerCharacteristicValueTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public ReadGattServerCharacteristicValueTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic);
+    ctor public ReadGattServerCharacteristicValueTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic, long);
+  }
+
+  public class ReadRssiTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public ReadRssiTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public ReadRssiTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+    field public static final String NAME = "ReadRssiTransaction";
+  }
+
+  public class RemoveGattServerServicesTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public RemoveGattServerServicesTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService);
+    ctor public RemoveGattServerServicesTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, long);
+  }
+
+  public class RequestGattClientPhyChangeTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public RequestGattClientPhyChangeTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, int, int, int);
+    ctor public RequestGattClientPhyChangeTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, int, int, int, long);
+    method public String getName();
+    field public static final String NAME = "RequestGattClientPhyChangeTransaction";
+  }
+
+  public class RequestGattConnectionIntervalTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public RequestGattConnectionIntervalTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.tx.RequestGattConnectionIntervalTransaction.Speed);
+    ctor public RequestGattConnectionIntervalTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.tx.RequestGattConnectionIntervalTransaction.Speed, long);
+    method public String getName();
+  }
+
+  public enum RequestGattConnectionIntervalTransaction.Speed {
+    method public int getConnectionPriority();
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tx.RequestGattConnectionIntervalTransaction.Speed HIGH;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tx.RequestGattConnectionIntervalTransaction.Speed LOW;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.tx.RequestGattConnectionIntervalTransaction.Speed MID;
+  }
+
+  public class RequestMtuGattTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public RequestMtuGattTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, int);
+    ctor public RequestMtuGattTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, int, long);
+    method public String getName();
+    field public static final String NAME = "RequestMtuGattTransaction";
+  }
+
+  public class SendGattServerResponseTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public SendGattServerResponseTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice, int, int, int, byte[]);
+    ctor public SendGattServerResponseTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice, int, int, int, byte[], long);
+    field protected final int offset;
+    field protected final int requestId;
+    field protected final byte[] value;
+  }
+
+  public class SetClientConnectionStateTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public SetClientConnectionStateTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public SetClientConnectionStateTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+  }
+
+  public class SetServerConnectionStateTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public SetServerConnectionStateTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.GattState);
+    ctor public SetServerConnectionStateTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.GattState, long);
+  }
+
+  public class SubscribeToCharacteristicNotificationsTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public SubscribeToCharacteristicNotificationsTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic);
+    ctor public SubscribeToCharacteristicNotificationsTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, long);
+    method public String getName();
+    field public static final String NAME = "SubscribeToCharacteristicNotificationsTransaction";
+  }
+
+  public class UnSubscribeToGattCharacteristicNotificationsTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public UnSubscribeToGattCharacteristicNotificationsTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic);
+    ctor public UnSubscribeToGattCharacteristicNotificationsTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, long);
+    method public String getName();
+    field public static final String NAME = "UnSubscribeToGattCharacteristicNotificationsTransaction";
+  }
+
+  public class WriteGattCharacteristicTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public WriteGattCharacteristicTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic);
+    ctor public WriteGattCharacteristicTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, long);
+    method public String getName();
+  }
+
+  public class WriteGattDescriptorTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public WriteGattDescriptorTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattDescriptor);
+    ctor public WriteGattDescriptorTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattDescriptor, long);
+    method public String getName();
+  }
+
+  public class WriteGattServerCharacteristicDescriptorValueTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public WriteGattServerCharacteristicDescriptorValueTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic, BluetoothGattDescriptor, byte[]);
+    ctor public WriteGattServerCharacteristicDescriptorValueTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic, BluetoothGattDescriptor, byte[], long);
+  }
+
+  public class WriteGattServerCharacteristicValueTransaction extends com.fitbit.bluetooth.fbgatt.GattServerTransaction {
+    ctor public WriteGattServerCharacteristicValueTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic, byte[]);
+    ctor public WriteGattServerCharacteristicValueTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, BluetoothGattCharacteristic, byte[], long);
+  }
+
+}
+
+package com.fitbit.bluetooth.fbgatt.tx.mocks {
+
+  public class AddGattServerServiceMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.AddGattServerServiceTransaction {
+    ctor public AddGattServerServiceMockTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattService, boolean);
+  }
+
+  public class BlockingServerTaskTestMockTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public BlockingServerTaskTestMockTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic);
+    method public String getName();
+  }
+
+  public class BlockingTaskTestMockTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public BlockingTaskTestMockTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic);
+    method public String getName();
+  }
+
+  public class CloseGattMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.CloseGattTransaction {
+    ctor public CloseGattMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState);
+  }
+
+  public class GattClientDiscoverMockServicesTransaction extends com.fitbit.bluetooth.fbgatt.tx.GattClientDiscoverServicesTransaction {
+    ctor public GattClientDiscoverMockServicesTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, List<BluetoothGattService>, boolean);
+  }
+
+  public class GattConnectMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.GattConnectTransaction {
+    ctor public GattConnectMockTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, boolean);
+  }
+
+  public class GattDisconnectMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.GattDisconnectTransaction {
+    ctor public GattDisconnectMockTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, boolean);
+  }
+
+  public class GattServerConnectMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.GattServerConnectTransaction {
+    ctor public GattServerConnectMockTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice, boolean);
+    method public void transaction(com.fitbit.bluetooth.fbgatt.GattTransactionCallback);
+  }
+
+  public class GattServerDisconnectMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.GattServerDisconnectTransaction {
+    ctor public GattServerDisconnectMockTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice, boolean);
+  }
+
+  @org.jetbrains.annotations.TestOnly public class MockNoOpTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public MockNoOpTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    ctor public MockNoOpTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, long);
+    method public String getName();
+  }
+
+  public class NotifyGattServerCharacteristicMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.NotifyGattServerCharacteristicTransaction {
+    ctor public NotifyGattServerCharacteristicMockTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, boolean, boolean);
+    method public void setShouldThrow(boolean);
+  }
+
+  public class ReadGattCharacteristicMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.ReadGattCharacteristicTransaction {
+    ctor public ReadGattCharacteristicMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, byte[], boolean);
+    method @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.PROTECTED) public void transaction(com.fitbit.bluetooth.fbgatt.GattTransactionCallback);
+  }
+
+  public class ReadGattDescriptorMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.ReadGattDescriptorTransaction {
+    ctor public ReadGattDescriptorMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattDescriptor, byte[], boolean);
+  }
+
+  public class ReadRssiMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.ReadRssiTransaction {
+    ctor public ReadRssiMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, boolean);
+  }
+
+  public class RequestGattConnectionIntervalMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.RequestGattConnectionIntervalTransaction {
+    ctor public RequestGattConnectionIntervalMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.tx.RequestGattConnectionIntervalTransaction.Speed, boolean);
+  }
+
+  public class RequestMtuGattMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.RequestMtuGattTransaction {
+    ctor public RequestMtuGattMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, int, boolean);
+  }
+
+  public class SendGattServerResponseMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.SendGattServerResponseTransaction {
+    ctor public SendGattServerResponseMockTransaction(com.fitbit.bluetooth.fbgatt.GattServerConnection, com.fitbit.bluetooth.fbgatt.GattState, com.fitbit.bluetooth.fbgatt.FitbitBluetoothDevice, int, int, int, byte[], boolean);
+  }
+
+  public class SubscribeToCharacteristicNotificationsMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.SubscribeToCharacteristicNotificationsTransaction {
+    ctor public SubscribeToCharacteristicNotificationsMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, byte[], boolean);
+  }
+
+  public class TimeoutTestMockTransaction extends com.fitbit.bluetooth.fbgatt.GattTransaction {
+    ctor public TimeoutTestMockTransaction(com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic);
+    method public String getName();
+  }
+
+  public class UnSubscribeToGattCharacteristicNotificationsMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.UnSubscribeToGattCharacteristicNotificationsTransaction {
+    ctor public UnSubscribeToGattCharacteristicNotificationsMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, byte[], boolean);
+  }
+
+  public class WriteGattCharacteristicMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.WriteGattCharacteristicTransaction {
+    ctor public WriteGattCharacteristicMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, byte[], boolean);
+    ctor public WriteGattCharacteristicMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattCharacteristic, byte[], boolean, long);
+  }
+
+  public class WriteGattDescriptorMockTransaction extends com.fitbit.bluetooth.fbgatt.tx.WriteGattDescriptorTransaction {
+    ctor public WriteGattDescriptorMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattDescriptor, byte[], boolean);
+    ctor public WriteGattDescriptorMockTransaction(@Nullable com.fitbit.bluetooth.fbgatt.GattConnection, com.fitbit.bluetooth.fbgatt.GattState, BluetoothGattDescriptor, byte[], boolean, long);
+    method @VisibleForTesting(otherwise=androidx.annotation.VisibleForTesting.PROTECTED) public void transaction(com.fitbit.bluetooth.fbgatt.GattTransactionCallback);
+  }
+
+}
+
+package com.fitbit.bluetooth.fbgatt.util {
+
+  public class Bytes {
+    ctor public Bytes();
+    method public static String byteArrayToHexString(byte[]);
+    method public static String byteArrayToHexString(byte[], boolean);
+    method public static int getLength(List<byte[]>);
+    method public static byte[] hexStringToByteArray(String);
+    method public static boolean isValidHexString(String);
+    method public static byte[] reverse(byte[]);
+  }
+
+  public enum GattDisconnectReason {
+    method public int getCode();
+    method public static com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason getReasonForCode(int);
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_CANCEL;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_CONNECTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_CONNECTING;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_DISCONNECTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_DISCONNECTING;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_FAIL_ESTABLISH;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_LMP_TIMEOUT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_NO_RESOURCES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_TERMINATE_LOCAL_HOST;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_TERMINATE_PEER_USER;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_TIMEOUT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason GATT_CONN_UNKNOWN_PROBABLY_QUIET_DISCONNECT;
+  }
+
+  public enum GattStatus {
+    method public int getCode();
+    method public static com.fitbit.bluetooth.fbgatt.util.GattStatus getStatusForCode(int);
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_AUTH_FAIL;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_BUSY;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_CMD_STARTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_CONGESTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_DB_FULL;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_ENCRYPED_MITM;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_ENCRYPED_NO_MITM;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_ERROR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_ERR_UNLIKELY;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_ILLEGAL_PARAMETER;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INSUF_AUTHENTICATION;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INSUF_AUTHORIZATION;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INSUF_ENCRYPTION;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INSUF_KEY_SIZE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INSUF_RESOURCE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INTERNAL_ERROR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INVALID_ATTR_LEN;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INVALID_CFG;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INVALID_HANDLE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INVALID_OFFSET;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_INVALID_PDU;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_MORE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_NOT_ENCRYPTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_NOT_FOUND;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_NOT_LONG;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_NO_RESOURCES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_PENDING;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_PREPARE_Q_FULL;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_READ_NOT_PERMIT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_REQ_NOT_SUPPORTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_SERVICE_STARTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_SUCCESS;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_UNKNOWN;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_UNSUPPORT_GRP_TYPE;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_WRITE_NOT_PERMIT;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.GattStatus GATT_WRONG_STATE;
+  }
+
+  public class GattUtils {
+    ctor public GattUtils();
+    method @Nullable public com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy copyCharacteristic(@Nullable BluetoothGattCharacteristic);
+    method @Nullable public com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy copyDescriptor(@Nullable BluetoothGattDescriptor);
+    method @Nullable public com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattServiceCopy copyService(@Nullable BluetoothGattService);
+    method @Nullable public BluetoothAdapter getBluetoothAdapter(Context);
+    method public String getBondStateDescription(int);
+    method public String getDevClassDescription(int);
+    method public String getDevTypeDescription(int);
+    method public String getMajDevClassDescription(int);
+    method public boolean isPerhipheralCurrentlyConnectedToPhone(@Nullable Context, @Nullable BluetoothDevice);
+    method @Nullable public static String missingAdvertisePermission(@Nullable Context);
+    method @Nullable public static String missingConnectPermission(@Nullable Context);
+    method @Nullable public static String missingScanPermission(@Nullable Context);
+    method public String safeGetBtDeviceName(@Nullable BluetoothDevice);
+    method public String safeGetBtDeviceName(@Nullable BluetoothGatt);
+  }
+
+  public class LooperWatchdog {
+    ctor public LooperWatchdog(Looper);
+    method public boolean handleMessage(@NonNull Message);
+    method public void startProbing();
+    method public void stopProbing();
+  }
+
+  public enum ScanFailedReason {
+    method public int getCode();
+    method public static com.fitbit.bluetooth.fbgatt.util.ScanFailedReason getReasonForCode(int);
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.ScanFailedReason SCAN_FAILED_ALREADY_STARTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.ScanFailedReason SCAN_FAILED_APPLICATION_REGISTRATION_FAILED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.ScanFailedReason SCAN_FAILED_FEATURE_UNSUPPORTED;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.ScanFailedReason SCAN_FAILED_INTERNAL_ERROR;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.ScanFailedReason SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.ScanFailedReason SCAN_FAILED_SCANNING_TOO_FREQUENTLY;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.ScanFailedReason SCAN_FAILED_UNKNOWN_REASON;
+    enum_constant public static final com.fitbit.bluetooth.fbgatt.util.ScanFailedReason SCAN_SUCCESS_NO_ERROR;
+  }
+
+}
+

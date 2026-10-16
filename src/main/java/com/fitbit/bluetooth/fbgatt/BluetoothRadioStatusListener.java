@@ -15,9 +15,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+
+import androidx.core.content.ContextCompat;
 import androidx.annotation.VisibleForTesting;
 
 import timber.log.Timber;
@@ -29,7 +32,7 @@ import timber.log.Timber;
  * <p>
  * Created by iowens on 8/27/18.
  */
-class BluetoothRadioStatusListener {
+public class BluetoothRadioStatusListener {
     @VisibleForTesting
     static final long MIN_TURNING_OFF_CALLBACK_DELAY = 500;
     static final long MIN_TURNING_ON_CALLBACK_DELAY = 1000;
@@ -192,7 +195,12 @@ class BluetoothRadioStatusListener {
 
     void startListening() {
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        context.getApplicationContext().registerReceiver(receiver, filter);
+        Context appContext = context.getApplicationContext();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.registerReceiver(appContext, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
+        } else {
+            appContext.registerReceiver(receiver, filter);
+        }
     }
 
     /**

@@ -16,8 +16,6 @@ import com.fitbit.bluetooth.fbgatt.Situation;
 import com.fitbit.bluetooth.fbgatt.TransactionResult;
 import com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy;
 import com.fitbit.bluetooth.fbgatt.strategies.Strategy;
-import com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason;
-
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattDescriptor;
 import androidx.annotation.Nullable;
@@ -95,7 +93,7 @@ public class ReadGattDescriptorTransaction extends GattTransaction {
     @Override
     public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptorCopy descriptor, int status) {
         TransactionResult.Builder builder = new TransactionResult.Builder().transactionName(getName());
-        builder.responseStatus(GattDisconnectReason.getReasonForCode(status).ordinal());
+        builder.responseStatus(status);
         if(status == BluetoothGatt.GATT_SUCCESS) {
             getConnection().setState(GattState.READ_DESCRIPTOR_SUCCESS);
             builder.resultStatus(TransactionResult.TransactionResultStatus.SUCCESS)

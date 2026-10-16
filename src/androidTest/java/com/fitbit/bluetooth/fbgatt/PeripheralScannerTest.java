@@ -10,15 +10,18 @@ package com.fitbit.bluetooth.fbgatt;
 
 import android.bluetooth.le.ScanFilter;
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.Build;
 import android.os.ParcelUuid;
 import android.os.SystemClock;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.rule.GrantPermissionRule;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.core.content.ContextCompat;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.rule.GrantPermissionRule;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -29,6 +32,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -44,6 +48,9 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public class PeripheralScannerTest {
 
+    private static final String DEVICE_NAME_FILTERS = "device-names.yaml";
+    /** Lets a scan start when no YAML file is on the device. Not a product name. */
+    private static final String UNCONFIGURED_FILTER = "Unconfigured";
     private static final String FITBIT_SERVICE_UUID_FORMAT = "adab%s-6e7d-4601-bda2-bffaa68956ba";
     private static final UUID FITBIT_SERVICE_UUID = UUID.fromString(String.format(FITBIT_SERVICE_UUID_FORMAT, "fb00"));
     private static final UUID FITBIT_SERVICE_MASK = UUID.fromString("FFFF0000-FFFF-FFFF-FFFF-FFFFFFFFFFFF");
@@ -54,8 +61,20 @@ public class PeripheralScannerTest {
     private static HandlerThread otherDelayHandlerThread;
     private static Handler otherDelayHandler;
     private static HandleIntentBasedScanResult handleIntentBasedScanResult;
+    // ACCESS_FINE_LOCATION is maxSdkVersion 30. API 31+ declares BLUETOOTH_SCAN.
     @Rule
-    public GrantPermissionRule mRuntimePermissionRule = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION);
+    public GrantPermissionRule mRuntimePermissionRule = GrantPermissionRule.grant(scanRuntimePermission());
+
+    private static File deviceNameFilterFile() {
+        return new File(appContext.getFilesDir(), DEVICE_NAME_FILTERS);
+    }
+
+    private static String scanRuntimePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return android.Manifest.permission.BLUETOOTH_SCAN;
+        }
+        return android.Manifest.permission.ACCESS_FINE_LOCATION;
+    }
 
     @Before
     public void before(){
@@ -78,26 +97,20 @@ public class PeripheralScannerTest {
         otherDelayHandlerThread.start();
         otherDelayHandler = new Handler(otherDelayHandlerThread.getLooper());
         handleIntentBasedScanResult = new HandleIntentBasedScanResult();
-        names = new ArrayList<>();
-        names.add("Ionic");
-        names.add("Surge");
-        names.add("Blaze");
-        names.add("Versa");
-        names.add("Antares");
-        names.add("Charge 3");
-        names.add("Charge 2");
-        names.add("Charge HR");
-        names.add("Alta");
-        names.add("Alta HR");
-        names.add("Flex");
-        names.add("Flex 2");
-        names.add("Versa Lite");
-        names.add("Inspire");
-        names.add("Inspire HR");
-        names.add("Mira");
         appContext = InstrumentationRegistry.getContext();
+        names = new ArrayList<>();
+        List<String> fromFile = DeviceNameFilterFile.load(deviceNameFilterFile());
+        if (fromFile.isEmpty()) {
+            names.add(UNCONFIGURED_FILTER);
+        } else {
+            names.addAll(fromFile);
+        }
         IntentFilter filter = new IntentFilter(PeripheralScanner.SCANNED_DEVICE_ACTION);
-        appContext.registerReceiver(handleIntentBasedScanResult, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.registerReceiver(appContext, handleIntentBasedScanResult, filter, ContextCompat.RECEIVER_EXPORTED);
+        } else {
+            appContext.registerReceiver(handleIntentBasedScanResult, filter);
+        }
     }
 
     @AfterClass
@@ -249,12 +262,15 @@ public class PeripheralScannerTest {
         assertEquals(true, FitbitGatt.getInstance().isStarted());
         assertFalse(FitbitGatt.getInstance().getPeripheralScanner().isScanning());
         FitbitGatt.getInstance().getPeripheralScanner().resetFilters();
-        FitbitGatt.getInstance().getPeripheralScanner().setDeviceNameFilters(names);
+        final List<String> loadedNames = FitbitGatt.getInstance().setDeviceNameFiltersFromYaml(deviceNameFilterFile());
+        Intent foreground = new Intent(appContext, ScanForegroundActivity.class);
+        foreground.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        appContext.startActivity(foreground);
         FitbitGatt.getInstance().getPeripheralScanner().startHighPriorityScan(appContext);
         CountDownLatch cdl = new CountDownLatch(1);
         handler.postDelayed(() -> {
             FitbitGatt.getInstance().getPeripheralScanner().cancelScan(appContext);
-            List<GattConnection> connections = FitbitGatt.getInstance().getMatchingConnectionsForDeviceNames(names);
+            List<GattConnection> connections = FitbitGatt.getInstance().getMatchingConnectionsForDeviceNames(loadedNames);
             Timber.d("Found %d devices", connections.size());
             assertTrue(connections.size() > 0);
             cdl.countDown();

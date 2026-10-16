@@ -61,7 +61,7 @@ public class BluetoothOffClearGattServerStrategy extends Strategy {
         // to make sure that this does not occur on the main thread since this probably transits
         // the JNI and could lead to a ANR
         Handler strategyHandler = new Handler(FitbitGatt.getInstance().getFitbitGattAsyncOperationThread().getLooper());
-        strategyHandler.post(() -> {
+        Runnable clearServer = () -> {
             GattServerConnection serverConn = FitbitGatt.getInstance().getServer();
             if(serverConn == null) {
                 Timber.i("Server connection was null when trying to execute strategy");
@@ -85,6 +85,15 @@ public class BluetoothOffClearGattServerStrategy extends Strategy {
                 Timber.w(e, "There was an internal stack NPE, the Android BluetoothService probably crashed or already shut down");
             }
             serverConn.setState(GattState.IDLE);
-        });
+        };
+        boolean posted = false;
+        try {
+            posted = strategyHandler.post(clearServer);
+        } catch (RuntimeException ignored) {
+            posted = false;
+        }
+        if (!posted) {
+            clearServer.run();
+        }
     }
 }

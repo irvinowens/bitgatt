@@ -30,7 +30,7 @@ import android.bluetooth.BluetoothGattService;
  * to the callback
  */
 
-interface GattServerListener {
+public interface GattServerListener {
     /**
      * *DO NOT USE UNLESS YOU KNOW WHAT YOU ARE DOING!!!* library internal method for notifying the {@link FitbitGatt} that the connection
      * state has changed

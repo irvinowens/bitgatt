@@ -14,7 +14,7 @@ import com.fitbit.bluetooth.fbgatt.GattState;
 import com.fitbit.bluetooth.fbgatt.GattTransaction;
 import com.fitbit.bluetooth.fbgatt.GattTransactionCallback;
 import com.fitbit.bluetooth.fbgatt.TransactionResult;
-import com.fitbit.bluetooth.fbgatt.util.GattDisconnectReason;
+import com.fitbit.bluetooth.fbgatt.util.GattStatus;
 
 import android.bluetooth.BluetoothGatt;
 
@@ -70,14 +70,14 @@ public class RequestGattClientPhyChangeTransaction extends GattTransaction {
             }
         } else {
             Timber.i("[%s] Can't change the PHY on this version of Android, no-op", getDevice());
-            getConnection().setState(GattState.IDLE);
+            completeAsNoOp(callback);
         }
     }
 
     @Override
     public void onPhyUpdate(BluetoothGatt gatt, int txPhy, int rxPhy, int status) {
         TransactionResult.Builder builder = new TransactionResult.Builder().transactionName(getName());
-        builder.responseStatus(GattDisconnectReason.getReasonForCode(status).ordinal());
+        builder.responseStatus(status);
         if(status == BluetoothGatt.GATT_SUCCESS) {
             getConnection().setState(GattState.REQUEST_PHY_CHANGE_SUCCESS);
             builder.resultStatus(TransactionResult.TransactionResultStatus.SUCCESS)
@@ -96,6 +96,20 @@ public class RequestGattClientPhyChangeTransaction extends GattTransaction {
             // even if we fail to request the PHY then we can still use the connection
             getConnection().setState(GattState.IDLE);
         }
+    }
+
+    /**
+     * API 21–25 have no client PHY. Finish immediately with a documented no-op failure
+     * instead of waiting out the transaction timeout.
+     */
+    private void completeAsNoOp(GattTransactionCallback callback) {
+        TransactionResult.Builder builder = new TransactionResult.Builder().transactionName(getName());
+        getConnection().setState(GattState.REQUEST_PHY_CHANGE_FAILURE);
+        builder.resultStatus(TransactionResult.TransactionResultStatus.FAILURE)
+                .responseStatus(GattStatus.GATT_REQ_NOT_SUPPORTED.getCode())
+                .gattState(getConnection().getGattState());
+        callCallbackWithTransactionResultAndRelease(callback, builder.build());
+        getConnection().setState(GattState.IDLE);
     }
 
     @Override

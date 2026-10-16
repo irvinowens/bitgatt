@@ -23,8 +23,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Timer;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -33,13 +36,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -108,7 +117,7 @@ public class AlwaysConnectedScannerTest {
 
     @After
     public void after(){
-        // dunno yet
+        SdkInt.restore();
     }
 
     /**
@@ -349,6 +358,137 @@ public class AlwaysConnectedScannerTest {
         } else {
             alwaysConnectedScanner.unregisterAlwaysConnectedScannerListener(callback);
         }
+    }
+
+    @Test
+    public void api26UsesThePeriodicScanner() throws Exception {
+        PeripheralScanner original = installScannerSpy();
+        try {
+            SdkInt.set(26);
+            doReturn(true).when(peripheralScanner).startPeriodicScan(nullable(Context.class));
+            addOneFilter();
+            assertTrue(alwaysConnectedScanner.start(mockContext));
+            verify(peripheralScanner).startPeriodicScan(nullable(Context.class));
+            verify(peripheralScanner, never()).startPendingIntentBasedBackgroundScan(anyList(), any(Context.class));
+            assertTrue(alwaysConnectedScanner.isAlwaysConnectedScannerEnabled());
+        } finally {
+            restoreScanner(original);
+            alwaysConnectedScanner.stop(mockContext);
+        }
+    }
+
+    @Test
+    public void api27And37StayEnabledWhenThePendingIntentStartReturnsFalse() throws Exception {
+        PeripheralScanner original = installScannerSpy();
+        try {
+            doReturn(false).when(peripheralScanner).startPendingIntentBasedBackgroundScan(anyList(), any(Context.class));
+            for (int sdk : new int[] {27, 37}) {
+                SdkInt.set(sdk);
+                alwaysConnectedScanner.stop(mockContext);
+                org.mockito.Mockito.clearInvocations(peripheralScanner);
+                addOneFilter();
+                assertTrue(alwaysConnectedScanner.start(mockContext));
+                verify(peripheralScanner).startPendingIntentBasedBackgroundScan(anyList(), any(Context.class));
+                verify(peripheralScanner, never()).startPeriodicScan(nullable(Context.class));
+                assertTrue(alwaysConnectedScanner.isAlwaysConnectedScannerEnabled());
+            }
+        } finally {
+            restoreScanner(original);
+            alwaysConnectedScanner.stop(mockContext);
+        }
+    }
+
+    @Test
+    public void failedPeriodicScanBelowApi27LeavesTheScannerDisabled() throws Exception {
+        PeripheralScanner original = installScannerSpy();
+        try {
+            SdkInt.set(26);
+            doReturn(false).when(peripheralScanner).startPeriodicScan(nullable(Context.class));
+            addOneFilter();
+            assertFalse(alwaysConnectedScanner.start(mockContext));
+            assertFalse(alwaysConnectedScanner.isAlwaysConnectedScannerEnabled());
+            verify(peripheralScanner, never()).startPendingIntentBasedBackgroundScan(anyList(), any(Context.class));
+        } finally {
+            restoreScanner(original);
+            alwaysConnectedScanner.stop(mockContext);
+        }
+    }
+
+    @Test
+    public void pendingIntentStopRestartsOnlyWhileTheListenerIsRegistered() throws Exception {
+        PeripheralScanner original = installScannerSpy();
+        try {
+            SdkInt.set(27);
+            doReturn(false).when(peripheralScanner).startPendingIntentBasedBackgroundScan(anyList(), any(Context.class));
+            gatt.unregisterAllGattEventListeners();
+            addOneFilter();
+            assertTrue(alwaysConnectedScanner.start(mockContext));
+            org.mockito.Mockito.clearInvocations(peripheralScanner);
+
+            gatt.onPendingIntentScanStatusChanged(false);
+
+            verify(peripheralScanner).startPendingIntentBasedBackgroundScan(anyList(), any(Context.class));
+            alwaysConnectedScanner.stop(mockContext);
+            org.mockito.Mockito.clearInvocations(peripheralScanner);
+            gatt.onPendingIntentScanStatusChanged(false);
+            verify(peripheralScanner, never()).startPendingIntentBasedBackgroundScan(anyList(), any(Context.class));
+            verify(peripheralScanner, never()).startPeriodicScan(nullable(Context.class));
+        } finally {
+            restoreScanner(original);
+            alwaysConnectedScanner.stop(mockContext);
+        }
+    }
+
+    @Test
+    public void removeScanFilterRemovesAPresentFilterAndLeavesAnAbsentOne() throws Exception {
+        ScanFilter present = new ScanFilter.Builder().setDeviceName("present-filter").build();
+        ScanFilter absent = new ScanFilter.Builder().setDeviceName("absent-filter").build();
+        alwaysConnectedScanner.setScanFilters(Collections.singletonList(present));
+        assertTrue(currentFilters().contains(present));
+        alwaysConnectedScanner.removeScanFilter(mockContext, present);
+        assertFalse(currentFilters().contains(present));
+        alwaysConnectedScanner.setScanFilters(Collections.singletonList(present));
+        List<ScanFilter> unchanged = new ArrayList<>(currentFilters());
+        alwaysConnectedScanner.removeScanFilter(mockContext, absent);
+        assertEquals(unchanged, new ArrayList<>(currentFilters()));
+        assertTrue(currentFilters().contains(present));
+    }
+
+    private void addOneFilter() {
+        alwaysConnectedScanner.setScanFilters(Collections.singletonList(
+                new ScanFilter.Builder().setDeviceName("always-connected").build()));
+    }
+
+    private PeripheralScanner installScannerSpy() throws Exception {
+        PeripheralScanner real = gatt.getPeripheralScanner();
+        if (real == null) {
+            fail("No peripheral scanner");
+            return null;
+        }
+        PeripheralScanner spy = org.mockito.Mockito.spy(real);
+        scannerField().set(gatt, spy);
+        peripheralScanner = spy;
+        return real;
+    }
+
+    private void restoreScanner(PeripheralScanner original) throws Exception {
+        if (original != null) {
+            scannerField().set(gatt, original);
+            peripheralScanner = original;
+        }
+    }
+
+    private static Field scannerField() throws Exception {
+        Field field = FitbitGatt.class.getDeclaredField("peripheralScanner");
+        field.setAccessible(true);
+        return field;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ScanFilter> currentFilters() throws Exception {
+        Field field = AlwaysConnectedScanner.class.getDeclaredField("scanFilters");
+        field.setAccessible(true);
+        return (List<ScanFilter>) field.get(alwaysConnectedScanner);
     }
 
     /**

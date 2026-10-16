@@ -80,4 +80,12 @@ public interface ScannerInterface {
      * Internal method to the scanner to clean-up resources
      */
     void cleanup();
+
+    /**
+     * Default scan settings: scan mode only. Legacy, PHY, callback type, and report delay stay
+     * at the platform default unless a caller opts into extended PHY scanning.
+     */
+    default ScanSettings buildDefaultScanSettings(int scanMode) {
+        return new ScanSettings.Builder().setScanMode(scanMode).build();
+    }
 }

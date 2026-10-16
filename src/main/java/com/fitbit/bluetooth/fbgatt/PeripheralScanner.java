@@ -14,6 +14,7 @@ import android.annotation.TargetApi;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
@@ -41,13 +42,15 @@ import static android.bluetooth.le.ScanCallback.SCAN_FAILED_ALREADY_STARTED;
 import static android.bluetooth.le.ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED;
 import static android.bluetooth.le.ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED;
 import static android.bluetooth.le.ScanCallback.SCAN_FAILED_INTERNAL_ERROR;
+import static android.bluetooth.le.ScanCallback.SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES;
+import static android.bluetooth.le.ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY;
 import static com.fitbit.bluetooth.fbgatt.FitbitGatt.atLeastSDK;
 
 /**
  * A Scanner for Bluetooth LE Devices
  */
 @TargetApi(21)
-class PeripheralScanner {
+public class PeripheralScanner {
 
     final static long SCAN_DURATION = TimeUnit.SECONDS.toMillis(120);
     private final static long SCAN_INTERVAL = SCAN_DURATION * 2;
@@ -57,6 +60,19 @@ class PeripheralScanner {
     private final static int MAX_BACKOFF_MULTIPLIER = 2; // should always correspond to roughly 16 minutes worst case
     static final int BACKGROUND_SCAN_REQUEST_CODE = 21436;
     static final String SCANNED_DEVICE_ACTION = "com.fitbit.bluetooth.fbgatt.ScannedDevice";
+
+    /**
+     * Flags for the scan {@link PendingIntent}. The Bluetooth stack writes
+     * {@code EXTRA_LIST_SCAN_RESULT}, {@code EXTRA_CALLBACK_TYPE}, and {@code EXTRA_ERROR_CODE},
+     * so the intent cannot be immutable. Every creation site must use this helper or a later
+     * stop will not match the scan intent.
+     */
+    static int scanPendingIntentFlags() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE;
+        }
+        return PendingIntent.FLAG_UPDATE_CURRENT;
+    }
     private static final int MAX_SCANS_ALLOWED_PER_30_SECONDS = 4;
     private static final int DEFAULT_SCAN_BACKOFF_MULTIPLIER = 1;
 
@@ -78,6 +94,9 @@ class PeripheralScanner {
     private TrackerScannerListener listener;
     private GattUtils bleUtils;
     private boolean instrumentationTestMode;
+    private boolean extendedScanEnabled;
+    private boolean highDataThroughputPhyRequested;
+    private boolean deferScanWhileConnecting;
 
     private Map<String, BluetoothDevice> foundDevices = new HashMap<>();
     private boolean resetScanBackoff;
@@ -130,6 +149,7 @@ class PeripheralScanner {
                     dev.setRssi(result.getRssi());
                     dev.origin = FitbitBluetoothDevice.DeviceOrigin.SCANNED;
                     dev.setScanRecord(result.getScanRecord());
+                    dev.copyExtendedScanFields(result, extendedScanEnabled);
                     listener.onFitbitDeviceFound(dev);
                 } else {
                     Timber.v("Scanned device %s below RSSI threshold", dev);
@@ -145,6 +165,7 @@ class PeripheralScanner {
                         dev.origin = FitbitBluetoothDevice.DeviceOrigin.SCANNED;
                         dev.setRssi(result.getRssi());
                         dev.setScanRecord(result.getScanRecord());
+                        dev.copyExtendedScanFields(result, extendedScanEnabled);
                         listener.onFitbitDeviceFound(dev);
                     } else {
                         Timber.v("Scanned device %s below RSSI threshold", dev);
@@ -155,9 +176,14 @@ class PeripheralScanner {
             @Override
             public void onScanFailed(int errorCode) {
                 super.onScanFailed(errorCode);
-                Timber.w("onScanFailed %s", ScanFailure.getFailureForReason(errorCode));
+                ScanFailure failure = ScanFailure.getFailureForReason(errorCode);
+                Timber.w("onScanFailed %s", failure);
                 isScanning.set(false);
                 listener.onScanStatusChanged(isScanning.get());
+                if (errorCode == SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES
+                        || errorCode == SCAN_FAILED_SCANNING_TOO_FREQUENTLY) {
+                    FitbitGatt.getInstance().dispatchScanFailure(failure);
+                }
                 if (!FitbitGatt.getInstance().isBluetoothOn()) {
                     Timber.v("Bluetooth was off, releasing the scanner");
                 }
@@ -203,6 +229,88 @@ class PeripheralScanner {
     }
 
     /**
+     * Off by default. When enabled, scan settings request non-legacy advertisements on 1M and
+     * coded PHY, plus HDT on API 37 when the controller supports it.
+     */
+    void setExtendedScanEnabled(boolean extendedScanEnabled) {
+        this.extendedScanEnabled = extendedScanEnabled;
+    }
+
+    /**
+     * API 37 only. High-data-throughput PHY is added to an extended scan when the caller asks
+     * and the controller reports support. It is never added on API 26–36.
+     */
+    void setLeHighDataThroughputPhyEnabled(boolean highDataThroughputPhyRequested) {
+        this.highDataThroughputPhyRequested = highDataThroughputPhyRequested;
+    }
+
+    boolean isExtendedScanEnabled() {
+        return extendedScanEnabled;
+    }
+
+    /**
+     * While any connection is connecting, the next scan start is delayed instead of touching the radio.
+     */
+    void setDeferScanWhileConnecting(boolean deferScanWhileConnecting) {
+        this.deferScanWhileConnecting = deferScanWhileConnecting;
+    }
+
+    private boolean shouldDeferScan() {
+        if (deferScanWhileConnecting) {
+            return true;
+        }
+        FitbitGatt gatt = FitbitGatt.getInstance();
+        if (gatt == null || gatt.getConnectionMap() == null) {
+            return false;
+        }
+        for (GattConnection connection : gatt.getConnectionMap().values()) {
+            if (connection != null && connection.getGattState() == GattState.CONNECTING) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean refuseMissingScanPermission(Context context) {
+        String missing = GattUtils.missingScanPermission(context);
+        if (missing == null) {
+            return false;
+        }
+        Timber.w("Scan refused, missing %s", missing);
+        return true;
+    }
+
+    private ScanSettings scanSettings(Context context, int mode) {
+        ScanSettings.Builder builder = new ScanSettings.Builder().setScanMode(mode);
+        if (extendedScanEnabled && atLeastSDK(Build.VERSION_CODES.O)) {
+            builder.setLegacy(false);
+            int phy = BluetoothDevice.PHY_LE_1M_MASK | BluetoothDevice.PHY_LE_CODED_MASK;
+            if (highDataThroughputPhyRequested && atLeastSDK(Build.VERSION_CODES.CINNAMON_BUN)) {
+                BluetoothAdapter adapter = bleUtils.getBluetoothAdapter(context);
+                if (adapter != null
+                        && adapter.isLeHighDataThroughputPhySupported() == BluetoothStatusCodes.FEATURE_SUPPORTED) {
+                    phy |= BluetoothDevice.PHY_LE_HDT_MASK;
+                }
+            }
+            builder.setPhy(phy);
+        }
+        return builder.build();
+    }
+
+    private void reportHardwareScanFailure(int code) {
+        if (code == SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES) {
+            Timber.d("Can't start scan, out of hardware resources");
+            FitbitGatt.getInstance().dispatchScanFailure(ScanFailure.SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES);
+        } else if (code == SCAN_FAILED_SCANNING_TOO_FREQUENTLY) {
+            Timber.d("Can't start scan, scanning too frequently");
+            FitbitGatt.getInstance().dispatchScanFailure(ScanFailure.SCAN_FAILED_SCANNING_TOO_FREQUENTLY);
+        } else {
+            Timber.d("Can't start scan, unknown failure %d", code);
+        }
+        listener.onPendingIntentScanStatusChanged(pendingIntentIsScanning.get());
+    }
+
+    /**
      * This will start periodic scan with low power mode, please note that this will return false
      * if there is already a high-priority scan going on.
      *
@@ -211,6 +319,13 @@ class PeripheralScanner {
     synchronized boolean startPeriodicScan(@Nullable Context context) {
         if (context == null) {
             Timber.v("Can't start a high priority scan with a null context");
+            return false;
+        }
+        if (refuseMissingScanPermission(context)) {
+            return false;
+        }
+        if (shouldDeferScan()) {
+            mHandler.postDelayed(() -> startPeriodicScan(context), 200);
             return false;
         }
         if (stopPeriodicalScan || isScanning.get()) {
@@ -232,6 +347,13 @@ class PeripheralScanner {
     synchronized boolean startHighPriorityScan(@Nullable Context context) {
         if (context == null) {
             Timber.v("Can't start a high priority scan with a null context");
+            return false;
+        }
+        if (refuseMissingScanPermission(context)) {
+            return false;
+        }
+        if (shouldDeferScan()) {
+            mHandler.postDelayed(() -> startHighPriorityScan(context), 200);
             return false;
         }
         if (isScanning.get()) {
@@ -521,6 +643,13 @@ class PeripheralScanner {
      * @return true if the pending intent scan is started, false if not
      */
     synchronized boolean startPendingIntentBasedBackgroundScan(@NonNull List<ScanFilter> scanFilters, @NonNull Context context) {
+        if (refuseMissingScanPermission(context)) {
+            return false;
+        }
+        if (shouldDeferScan()) {
+            mHandler.postDelayed(() -> startPendingIntentBasedBackgroundScan(scanFilters, context), 200);
+            return false;
+        }
         if (pendingIntentIsScanning.get()) {
             Timber.w("Not starting scan, you can't start a background scan without cancelling your existing scan");
             listener.onPendingIntentScanStatusChanged(pendingIntentIsScanning.get());
@@ -549,7 +678,7 @@ class PeripheralScanner {
             stopBackgroundScan(backgroundIntentBasedScanIntent);
             int didStart;
             try {
-                didStart = scanner.startScan(scanFilters, null, backgroundIntentBasedScanIntent);
+                didStart = scanner.startScan(scanFilters, scanSettings(context, ScanSettings.SCAN_MODE_LOW_POWER), backgroundIntentBasedScanIntent);
             } catch (NullPointerException e) {
                 //https://fabric.io/fitbit7/android/apps/com.fitbit.fitbitmobile/issues/2e9748f5333eaa38d7f7141f73139504?time=last-ninety-days
                 Timber.w(e, "Could not start scan, android internal stack NPE");
@@ -581,8 +710,12 @@ class PeripheralScanner {
                         Timber.d("Can't start scan, feature unsupported");
                         listener.onPendingIntentScanStatusChanged(pendingIntentIsScanning.get());
                         break;
+                    case SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES:
+                    case SCAN_FAILED_SCANNING_TOO_FREQUENTLY:
+                        reportHardwareScanFailure(didStart);
+                        break;
                     default:
-                        Timber.d("Can't start scan, out of hardware resources, or scanning too frequently.");
+                        Timber.d("Can't start scan, unknown failure %d", didStart);
                         listener.onPendingIntentScanStatusChanged(pendingIntentIsScanning.get());
                         break;
                 }
@@ -597,11 +730,7 @@ class PeripheralScanner {
     }
 
     private PendingIntent getSystemPendingIntent(Context context){
-        Intent broadcastIntent = new Intent(context, HandleIntentBasedScanResult.class);
-        broadcastIntent.setAction(SCANNED_DEVICE_ACTION);
-        broadcastIntent.setClass(context, HandleIntentBasedScanResult.class);
-        return PendingIntent.getBroadcast(context,
-            BACKGROUND_SCAN_REQUEST_CODE, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        return ScanIntents.getBroadcast(context, ScanIntents.explicitScanIntent(context));
     }
 
     /**
@@ -622,6 +751,13 @@ class PeripheralScanner {
     @Nullable
     PendingIntent startBackgroundScan(List<String> macAddresses, Intent broadcastIntent, Context context) {
         if (atLeastSDK(Build.VERSION_CODES.O)) {
+            if (refuseMissingScanPermission(context)) {
+                return null;
+            }
+            if (shouldDeferScan()) {
+                mHandler.postDelayed(() -> startBackgroundScan(macAddresses, broadcastIntent, context), 200);
+                return null;
+            }
             BluetoothAdapter adapter = bleUtils.getBluetoothAdapter(context);
             if (adapter == null) {
                 listener.onPendingIntentScanStatusChanged(pendingIntentIsScanning.get());
@@ -639,39 +775,37 @@ class PeripheralScanner {
                 return null;
             }
 
-            List<ScanFilter> filters = new ArrayList<>(macAddresses.size());
-            // if filters are already set up, we should use them
+            List<ScanFilter> filters = new ArrayList<>();
             synchronized (scanFilters) {
                 filters.addAll(scanFilters);
             }
-            // check to ensure that the address provided is valid
+            if (macAddresses != null) {
+                for (String address : macAddresses) {
+                    try {
+                        if (adapter.getRemoteDevice(address) != null) {
+                            Timber.v("Starting background scan for device : %s", address);
+                            filters.add(new ScanFilter.Builder().setDeviceAddress(address).build());
+                        }
+                    } catch (IllegalArgumentException e) {
+                        Timber.w(e, "Invalid address %s provided.", address);
+                    }
+                }
+            }
             if (filters.isEmpty()) {
                 Timber.w("You can not start a background scan with no filters.");
                 listener.onPendingIntentScanStatusChanged(pendingIntentIsScanning.get());
                 return null;
             }
-            PendingIntent pending = PendingIntent.getBroadcast(context,
-                BACKGROUND_SCAN_REQUEST_CODE, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent pending = ScanIntents.getBroadcast(context, broadcastIntent);
             // if a pending intent scan is underway we will clear it first as we now know that
             // this consumes gatt_ifs we can not have more than one ever running at a time
             // we can't rely on the boolean because we might have been killed between calls
             // and need to cancel anyway so we will try to proactively cancel
             stopBackgroundScan(pending);
-            // in addition if there are mac addresses that we want to add we can do that
-            for (String address : macAddresses) {
-                if (adapter.getRemoteDevice(address) != null) {
-                    Timber.v("Starting background scan for device : %s", address);
-                    // you are not allowed to scan all, it will crash the app
-                    ScanFilter filter = new ScanFilter.Builder().setDeviceAddress(address).build();
-                    filters.add(filter);
-                } else {
-                    Timber.w("Invalid address %s provided.", address);
-                }
-            }
             if (!filters.isEmpty()) {
                 int didStart;
                 try {
-                    didStart = scanner.startScan(filters, null, pending);
+                    didStart = scanner.startScan(filters, scanSettings(context, ScanSettings.SCAN_MODE_LOW_POWER), pending);
                 } catch (NullPointerException e) {
                     Timber.w(e, "Could not start scan, android internal stack NPE");
                     listener.onPendingIntentScanStatusChanged(pendingIntentIsScanning.get());
@@ -702,8 +836,12 @@ class PeripheralScanner {
                             Timber.d("Can't start scan, feature unsupported");
                             listener.onPendingIntentScanStatusChanged(pendingIntentIsScanning.get());
                             break;
+                        case SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES:
+                        case SCAN_FAILED_SCANNING_TOO_FREQUENTLY:
+                            reportHardwareScanFailure(didStart);
+                            break;
                         default:
-                            Timber.d("Can't start scan, out of hardware resources, or scanning too frequently.");
+                            Timber.d("Can't start scan, unknown failure %d", didStart);
                             listener.onPendingIntentScanStatusChanged(pendingIntentIsScanning.get());
                             break;
                     }
@@ -744,6 +882,13 @@ class PeripheralScanner {
     }
 
     private synchronized boolean startScan(@Nullable Context context) {
+        if (context != null && refuseMissingScanPermission(context)) {
+            return false;
+        }
+        if (context != null && shouldDeferScan()) {
+            mHandler.postDelayed(() -> startScan(context), 200);
+            return false;
+        }
         ArrayList<ScanFilter> filters;
         synchronized (scanFilters) {
             filters = new ArrayList<>(scanFilters);
@@ -767,7 +912,7 @@ class PeripheralScanner {
             if (bleUtils.getBluetoothAdapter(context) == null) {
                 settings = new ScanSettings.Builder().build();
             } else {
-                settings = new ScanSettings.Builder().setScanMode(scanMode).build();
+                settings = scanSettings(context, scanMode);
                 // don't start a scanner without scan filters
                 Timber.v("Scan filter's size: %s", filters.size());
                 if (filters.isEmpty()) {

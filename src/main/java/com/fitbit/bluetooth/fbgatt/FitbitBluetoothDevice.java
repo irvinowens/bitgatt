@@ -13,6 +13,8 @@ import com.fitbit.bluetooth.fbgatt.util.GattUtils;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanRecord;
+import android.bluetooth.le.ScanResult;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -54,6 +56,12 @@ public class FitbitBluetoothDevice {
     private ScanRecord scanRecord;
     private String name;
     DeviceOrigin origin = DeviceOrigin.UNKNOWN;
+    @Nullable private Integer primaryPhy;
+    @Nullable private Integer secondaryPhy;
+    @Nullable private Boolean legacyAdvertisement;
+    @Nullable private Boolean connectableAdvertisement;
+    @Nullable private Integer advertisingSid;
+    @Nullable private Integer dataStatus;
     private CopyOnWriteArrayList<DevicePropertiesChangedCallback> devicePropertiesChangedListeners = new CopyOnWriteArrayList<>();
 
     public FitbitBluetoothDevice(@NonNull BluetoothDevice device) {
@@ -97,6 +105,29 @@ public class FitbitBluetoothDevice {
     }
 
     public int getRssi() { return rssi; }
+
+    /**
+     * Extended scan fields. Empty unless the caller opted into extended PHY scanning
+     * and this device was copied from a scan result.
+     */
+    @Nullable public Integer getPrimaryPhy() { return primaryPhy; }
+    @Nullable public Integer getSecondaryPhy() { return secondaryPhy; }
+    @Nullable public Boolean isLegacyAdvertisement() { return legacyAdvertisement; }
+    @Nullable public Boolean isConnectableAdvertisement() { return connectableAdvertisement; }
+    @Nullable public Integer getAdvertisingSid() { return advertisingSid; }
+    @Nullable public Integer getDataStatus() { return dataStatus; }
+
+    void copyExtendedScanFields(@Nullable ScanResult result, boolean extendedScanEnabled) {
+        if (!extendedScanEnabled || result == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return;
+        }
+        primaryPhy = result.getPrimaryPhy();
+        secondaryPhy = result.getSecondaryPhy();
+        legacyAdvertisement = result.isLegacy();
+        connectableAdvertisement = result.isConnectable();
+        advertisingSid = result.getAdvertisingSid();
+        dataStatus = result.getDataStatus();
+    }
 
     /**
      * Register a listener for changes in this fitbit bluetooth device, will notify on change of name

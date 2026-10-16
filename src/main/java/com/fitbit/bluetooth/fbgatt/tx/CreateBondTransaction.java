@@ -23,6 +23,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
+
+import androidx.core.content.ContextCompat;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
@@ -50,15 +53,26 @@ public class CreateBondTransaction extends GattTransaction {
     private static final long BOND_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
 
     private Context context;
+    private final Object bondLock = new Object();
+    private volatile boolean bondFinished;
 
     /**
-     * Receiver for {@link BluetoothDevice#ACTION_BOND_STATE_CHANGED}
+     * Receiver for {@link BluetoothDevice#ACTION_BOND_STATE_CHANGED}, and on API 36+ for
+     * key-missing and encryption-change broadcasts.
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(intent.getAction())) {
+            if (intent == null || intent.getAction() == null) {
+                return;
+            }
+            if (autonomousRepair(intent)) {
+                Timber.d("[%s] Autonomous re-pair in progress, not a bond failure", getDevice());
+                return;
+            }
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
                 BluetoothDevice extraDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 /*
                  * equals handled inside of {@link FitbitBluetoothDevice} for comparison to an
@@ -76,24 +90,17 @@ public class CreateBondTransaction extends GattTransaction {
                     switch (newState) {
                         case BluetoothDevice.BOND_BONDED:
                             Timber.d("[%s] Bond state changed to BONDED",getDevice());
-                            // success
                             bondSuccess();
                             break;
                         case BluetoothDevice.BOND_NONE:
                             Timber.w("[%s] Bond state changed to NONE",getDevice());
-                            // if we are here, we should go ahead and release the lock
-                            // failure
-                            synchronized (NAME) {
-                                NAME.notify();
-                            }
+                            bondFailure();
                             break;
                         case BluetoothDevice.BOND_BONDING:
                             Timber.d("[%s] Bond state changed to BONDING",getDevice());
-                            // in progress
                             break;
                         default:
                             Timber.w("[%s] Bond state changed to UNKNOWN",getDevice());
-                            // could be error, but perhaps not, we don't know
                             break;
                     }
                 } else {
@@ -101,6 +108,17 @@ public class CreateBondTransaction extends GattTransaction {
                             getConnection().getDevice(),
                             extraDevice);
                 }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+                    && BluetoothDevice.ACTION_KEY_MISSING.equals(action)) {
+                BluetoothDevice extraDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                //noinspection EqualsBetweenInconvertibleTypes
+                if (getConnection().getDevice().equals(extraDevice)) {
+                    Timber.w("[%s] Bond key is missing", getDevice());
+                    bondFailure();
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+                    && BluetoothDevice.ACTION_ENCRYPTION_CHANGE.equals(action)) {
+                Timber.d("[%s] Encryption change observed during bond", getDevice());
             }
         }
     };
@@ -147,18 +165,32 @@ public class CreateBondTransaction extends GattTransaction {
     }
 
     private void createBond(Context context) {
+        String missing = GattUtils.missingConnectPermission(context);
+        if (missing != null) {
+            Timber.w("[%s] createBond refused, missing %s", getDevice(), missing);
+            bondFailure();
+            return;
+        }
         FitbitBluetoothDevice device = getDevice();
         if (device == null) {
             Timber.w("[%s] Couldn't create the bond because device was null", device);
             bondFailure();
         } else {
             createBond(context, device);
-            // let's go ahead and wait until the bond timeout
-            synchronized (NAME) {
-                try {
-                    NAME.wait(BOND_TIMEOUT);
-                } catch (InterruptedException e) {
-                    Timber.e(e, "[%s] Well, the thread was interrupted, we will just let it go", device);
+            synchronized (bondLock) {
+                long deadline = System.currentTimeMillis() + BOND_TIMEOUT;
+                while (!bondFinished) {
+                    long remaining = deadline - System.currentTimeMillis();
+                    if (remaining <= 0) {
+                        break;
+                    }
+                    try {
+                        bondLock.wait(remaining);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        Timber.e(e, "[%s] Well, the thread was interrupted, we will just let it go", device);
+                        break;
+                    }
                 }
             }
         }
@@ -166,8 +198,35 @@ public class CreateBondTransaction extends GattTransaction {
 
     private void createBond(Context context, FitbitBluetoothDevice device) {
         this.context = context;
-        context.registerReceiver(receiver, new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED));
-        device.getBtDevice().createBond();
+        IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            bondFilter.addAction(BluetoothDevice.ACTION_KEY_MISSING);
+            bondFilter.addAction(BluetoothDevice.ACTION_ENCRYPTION_CHANGE);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.registerReceiver(context, receiver, bondFilter, ContextCompat.RECEIVER_EXPORTED);
+        } else {
+            context.registerReceiver(receiver, bondFilter);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            device.getBtDevice().createBond(BluetoothDevice.TRANSPORT_LE);
+        } else {
+            device.getBtDevice().createBond();
+        }
+    }
+
+    private boolean autonomousRepair(Intent intent) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) {
+            return false;
+        }
+        return intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_CONTEXT, -1) == BluetoothDevice.PAIRING_CONTEXT_REPAIRING;
+    }
+
+    private void releaseBondWait() {
+        bondFinished = true;
+        synchronized (bondLock) {
+            bondLock.notifyAll();
+        }
     }
 
     @VisibleForTesting
@@ -185,10 +244,7 @@ public class CreateBondTransaction extends GattTransaction {
         if (context != null) {
             context.unregisterReceiver(receiver);
         }
-        synchronized (NAME) {
-            NAME.notify();
-        }
-
+        releaseBondWait();
     }
 
     private void bondFailure() {
@@ -205,19 +261,13 @@ public class CreateBondTransaction extends GattTransaction {
         if (context != null) {
             context.unregisterReceiver(receiver);
         }
-        synchronized (NAME) {
-            NAME.notify();
-        }
+        releaseBondWait();
     }
 
     @Override
     protected void onGattClientTransactionTimeout(GattConnection connection) {
         super.onGattClientTransactionTimeout(connection);
-        // there is no reason to return anything, this is just so that we can
-        // unlock the monitor on the connection for timeout
-        synchronized (NAME) {
-            NAME.notify();
-        }
+        releaseBondWait();
     }
 
     @Override

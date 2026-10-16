@@ -22,6 +22,7 @@ import android.os.Looper;
 import androidx.annotation.Nullable;
 
 import com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattCharacteristicCopy;
+import com.fitbit.bluetooth.fbgatt.btcopies.BluetoothGattDescriptorCopy;
 import com.fitbit.bluetooth.fbgatt.tx.GattClientDiscoverServicesTransaction;
 import com.fitbit.bluetooth.fbgatt.tx.RequestGattClientPhyChangeTransaction;
 import com.fitbit.bluetooth.fbgatt.tx.RequestMtuGattTransaction;
@@ -29,6 +30,7 @@ import com.fitbit.bluetooth.fbgatt.util.GattStatus;
 import com.fitbit.bluetooth.fbgatt.util.GattUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -125,7 +127,7 @@ public class GattClientCallback extends BluetoothGattCallback {
                         .txPhy(txPhy)
                         .rxPhy(rxPhy)
                         .gattState(conn.getGattState())
-                        .responseStatus(GattDisconnectReason.getReasonForCode(status).ordinal()).build(), conn);
+                        .responseStatus(status).build(), conn);
                 }
             });
         }
@@ -300,7 +302,7 @@ public class GattClientCallback extends BluetoothGattCallback {
                         .transactionName(GattClientDiscoverServicesTransaction.NAME)
                         .serverServices(discoveredServices)
                         .gattState(conn.getGattState())
-                        .responseStatus(GattDisconnectReason.getReasonForCode(status).ordinal()).build(), conn);
+                        .responseStatus(status).build(), conn);
                 }
             });
         }
@@ -310,15 +312,26 @@ public class GattClientCallback extends BluetoothGattCallback {
     // are passed up to Java via JNI.  This means that the values can change, so we must copy through
     // here
     @Override
+    public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value, int status) {
+        Timber.v("[%s] onCharacteristicRead: Gatt Response Status %s", getDeviceMacFromGatt(gatt), GattStatus.getStatusForCode(status));
+        BluetoothGattCharacteristicCopy copy = copyCharacteristic(characteristic, value);
+        deliverCharacteristicRead(gatt, copy, status);
+    }
+
+    @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
         Timber.v("[%s] onCharacteristicRead: Gatt Response Status %s", getDeviceMacFromGatt(gatt), GattStatus.getStatusForCode(status));
         Timber.d("[%s][Threading] Originally called on thread : %s", getDeviceMacFromGatt(gatt), Thread.currentThread().getName());
-        ArrayList<GattClientListener> copy = new ArrayList<>(listeners.size());
-        copy.addAll(listeners);
-        for (GattClientListener listener : copy) {
-            if(listener.getDevice() != null && listener.getDevice().equals(gatt.getDevice())) {
-                handler.post(() -> listener.onCharacteristicRead(gatt, new GattUtils().copyCharacteristic(characteristic), status));
+        deliverCharacteristicRead(gatt, new GattUtils().copyCharacteristic(characteristic), status);
+    }
+
+    private void deliverCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristicCopy characteristic, int status) {
+        ArrayList<GattClientListener> listenersCopy = new ArrayList<>(listeners.size());
+        listenersCopy.addAll(listeners);
+        for (GattClientListener listener : listenersCopy) {
+            if (listener.getDevice() != null && gatt != null && listener.getDevice().equals(gatt.getDevice())) {
+                deliver(() -> listener.onCharacteristicRead(gatt, characteristic, status));
             }
         }
     }
@@ -338,30 +351,42 @@ public class GattClientCallback extends BluetoothGattCallback {
     }
 
     @Override
+    public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
+        Timber.d("[%s] onCharacteristicChanged: [Threading] Originally called on thread : %s", getDeviceMacFromGatt(gatt), Thread.currentThread().getName());
+        deliverCharacteristicChanged(gatt, copyCharacteristic(characteristic, value));
+    }
+
+    @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
         Timber.d("[%s] onCharacteristicChanged: [Threading] Originally called on thread : %s", getDeviceMacFromGatt(gatt), Thread.currentThread().getName());
+        deliverCharacteristicChanged(gatt, new GattUtils().copyCharacteristic(characteristic));
+    }
+
+    private void deliverCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristicCopy copyOfCharacteristic) {
         ArrayList<GattClientListener> copy = new ArrayList<>(listeners.size());
         copy.addAll(listeners);
-        BluetoothGattCharacteristicCopy copyOfCharacteristic = new GattUtils().copyCharacteristic(characteristic);
         for (GattClientListener listener : copy) {
-            if(listener.getDevice() != null && listener.getDevice().equals(gatt.getDevice())) {
-                handler.post(() -> listener.onCharacteristicChanged(gatt, copyOfCharacteristic));
+            if(listener.getDevice() != null && gatt != null && listener.getDevice().equals(gatt.getDevice())) {
+                deliver(() -> listener.onCharacteristicChanged(gatt, copyOfCharacteristic));
             }
+        }
+        if (gatt == null) {
+            return;
         }
         GattConnection conn = FitbitGatt.getInstance().getConnection(gatt.getDevice());
         if(conn == null) {
             Timber.v("[%s] Gatt was null, we could be mocking, if so we can't notify async", getDeviceMacFromGatt(gatt));
         } else {
-            handler.post(() -> {
+            deliver(() -> {
                 for(ConnectionEventListener asyncListener: conn.getConnectionEventListeners()) {
                     // since this is async, the result status is irrelevant so it will always be
                     // success because we received this data, as this is a snapshot of a live object
                     // we will need to copy the values into the tx result
                     TransactionResult result = new TransactionResult.Builder()
                         .gattState(conn.getGattState())
-                        .characteristicUuid(copyOfCharacteristic.getUuid())
-                        .data(copyOfCharacteristic.getValue())
+                        .characteristicUuid(copyOfCharacteristic == null ? null : copyOfCharacteristic.getUuid())
+                        .data(copyOfCharacteristic == null ? null : copyOfCharacteristic.getValue())
                         .resultStatus(TransactionResult.TransactionResultStatus.SUCCESS).build();
                     asyncListener.onClientCharacteristicChanged(result, conn);
                 }
@@ -370,16 +395,81 @@ public class GattClientCallback extends BluetoothGattCallback {
     }
 
     @Override
+    public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status, byte[] value) {
+        Timber.v("[%s] onDescriptorRead: Gatt Response Status %s", getDeviceMacFromGatt(gatt), GattStatus.getStatusForCode(status));
+        deliverDescriptorRead(gatt, copyDescriptor(descriptor, value), status);
+    }
+
+    @Override
     public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorRead(gatt, descriptor, status);
         Timber.v("[%s] onDescriptorRead: Gatt Response Status %s", getDeviceMacFromGatt(gatt), GattStatus.getStatusForCode(status));
         Timber.d("[%s][Threading] Originally called on thread : %s", getDeviceMacFromGatt(gatt), Thread.currentThread().getName());
+        deliverDescriptorRead(gatt, new GattUtils().copyDescriptor(descriptor), status);
+    }
+
+    private void deliverDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptorCopy descriptor, int status) {
         ArrayList<GattClientListener> copy = new ArrayList<>(listeners.size());
         copy.addAll(listeners);
         for (GattClientListener listener : copy) {
-            if(listener.getDevice() != null && listener.getDevice().equals(gatt.getDevice())) {
-                handler.post(() -> listener.onDescriptorRead(gatt, new GattUtils().copyDescriptor(descriptor), status));
+            if(listener.getDevice() != null && gatt != null && listener.getDevice().equals(gatt.getDevice())) {
+                deliver(() -> listener.onDescriptorRead(gatt, descriptor, status));
             }
+        }
+    }
+
+    /**
+     * Connection-parameter update. Published only as an event. It does not change a
+     * connection-interval transaction result and does not enqueue a transaction.
+     * API 37's {@link BluetoothGattCallback} no longer declares this method; hosts and tests
+     * still deliver it here when the controller reports new parameters.
+     */
+    public void onConnectionUpdated(BluetoothGatt gatt, int interval, int latency, int timeout, int status) {
+        if (gatt == null) {
+            return;
+        }
+        GattConnection conn = FitbitGatt.getInstance().getConnection(gatt.getDevice());
+        if (conn == null) {
+            return;
+        }
+        TransactionResult result = new TransactionResult.Builder()
+                .transactionName("onConnectionUpdated")
+                .gattState(conn.getGattState())
+                .responseStatus(status)
+                .resultStatus(status == BluetoothGatt.GATT_SUCCESS
+                        ? TransactionResult.TransactionResultStatus.SUCCESS
+                        : TransactionResult.TransactionResultStatus.FAILURE)
+                .build();
+        for (ConnectionEventListener listener : conn.getConnectionEventListeners()) {
+            listener.onConnectionUpdated(result, conn);
+        }
+    }
+
+    private BluetoothGattCharacteristicCopy copyCharacteristic(BluetoothGattCharacteristic characteristic, byte[] value) {
+        byte[] copied = value == null ? null : Arrays.copyOf(value, value.length);
+        BluetoothGattCharacteristicCopy copy = new GattUtils().copyCharacteristic(characteristic);
+        if (copy != null && copy.getValue() == null && copied != null) {
+            copy.setValue(copied);
+        }
+        return copy;
+    }
+
+    private BluetoothGattDescriptorCopy copyDescriptor(BluetoothGattDescriptor descriptor, byte[] value) {
+        byte[] copied = value == null ? null : Arrays.copyOf(value, value.length);
+        BluetoothGattDescriptorCopy copy = new GattUtils().copyDescriptor(descriptor);
+        if (copy != null && copy.getValue() == null && copied != null) {
+            copy.setValue(copied);
+        }
+        return copy;
+    }
+
+    private void deliver(Runnable action) {
+        try {
+            if (!handler.post(action)) {
+                action.run();
+            }
+        } catch (RuntimeException ex) {
+            action.run();
         }
     }
 
@@ -453,7 +543,7 @@ public class GattClientCallback extends BluetoothGattCallback {
                         .transactionName(RequestMtuGattTransaction.NAME)
                         .mtu(mtu)
                         .gattState(conn.getGattState())
-                        .responseStatus(GattDisconnectReason.getReasonForCode(status).ordinal()).build(), conn);
+                        .responseStatus(status).build(), conn);
                 }
             });
         }

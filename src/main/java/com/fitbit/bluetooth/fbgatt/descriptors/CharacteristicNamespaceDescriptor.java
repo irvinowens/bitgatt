@@ -15,7 +15,8 @@ import java.util.UUID;
 public class CharacteristicNamespaceDescriptor extends BluetoothGattDescriptor {
     private static final UUID notificationDescriptorTwentyNineOhFour = UUID.fromString("00002904-0000-1000-8000-00805f9b34fb");
     /**
-     * Will create a 0x2904 characteristic descriptor
+     * Will create a 0x2904 characteristic presentation format descriptor.
+     * The library does not add this descriptor automatically.
      */
     public CharacteristicNamespaceDescriptor() {
         super(notificationDescriptorTwentyNineOhFour, BluetoothGattDescriptor.PERMISSION_READ |

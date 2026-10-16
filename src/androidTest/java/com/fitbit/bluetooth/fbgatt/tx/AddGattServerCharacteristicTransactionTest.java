@@ -20,7 +20,7 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.os.ParcelUuid;
 import androidx.annotation.NonNull;
-import android.support.test.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 
 import junit.framework.Assert;
 
