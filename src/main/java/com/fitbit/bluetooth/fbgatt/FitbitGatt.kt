@@ -45,6 +45,7 @@ import com.fitbit.bluetooth.fbgatt.util.LooperWatchdog
 import java.util.ArrayList
 import java.util.Arrays
 import java.util.Collections
+import java.util.IdentityHashMap
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -109,6 +110,16 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
     @JvmField
     @VisibleForTesting
     val isStarted = AtomicBoolean(false)
+
+    /**
+     * True only after [startServer] has opened a server. [isStarted] flips earlier, while the
+     * open is still in flight, so listeners must not be told ready from that flag alone.
+     */
+    private val gattServerOpen = AtomicBoolean(false)
+
+    /** Listeners that have already received [FitbitGattCallback.onFitbitGattReady]. */
+    private val listenersNotifiedOfReady: MutableSet<FitbitGattCallback> =
+        Collections.newSetFromMap(IdentityHashMap())
 
     private var connectionCleanup: Handler? = null
     private var asyncOperationThreadWatchdog: LooperWatchdog? = null
@@ -188,11 +199,17 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
 
     fun unregisterGattEventListener(callback: FitbitGattCallback) {
         overallGattEventListeners.remove(callback)
+        synchronized(listenersNotifiedOfReady) {
+            listenersNotifiedOfReady.remove(callback)
+        }
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun unregisterAllGattEventListeners() {
         overallGattEventListeners.clear()
+        synchronized(listenersNotifiedOfReady) {
+            listenersNotifiedOfReady.clear()
+        }
     }
 
     fun setStarted() {
@@ -201,9 +218,34 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
         if (!success) {
             Timber.w("There was a problem updating the started state, are you starting from two threads?")
         } else {
+            gattServerOpen.set(true)
+            deliverGattReady()
+        }
+    }
+
+    /**
+     * Tells each registered listener that startup finished, once. Later [start] calls, including
+     * the ones that find the stack already up, still reach listeners that registered after the
+     * first callback.
+     */
+    private fun deliverGattReady() {
+        val pending = ArrayList<FitbitGattCallback>()
+        synchronized(listenersNotifiedOfReady) {
             for (callback in overallGattEventListeners) {
-                callback.onFitbitGattReady()
+                if (listenersNotifiedOfReady.add(callback)) {
+                    pending.add(callback)
+                }
             }
+        }
+        for (callback in pending) {
+            callback.onFitbitGattReady()
+        }
+    }
+
+    private fun resetGattReady() {
+        gattServerOpen.set(false)
+        synchronized(listenersNotifiedOfReady) {
+            listenersNotifiedOfReady.clear()
         }
     }
 
@@ -430,6 +472,7 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
                         readCallback.onFitbitGattStartFailed()
                     }
                     isStarted.set(false)
+                    resetGattReady()
                     if (scanStarted) {
                         cancelPeriodicalScan(getAppContext())
                     }
@@ -449,11 +492,13 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
                 if (!success) {
                     Timber.w("There was a problem updating the started state, are you starting from two threads?")
                 } else {
-                    for (readCallback in overallGattEventListeners) {
-                        readCallback.onFitbitGattReady()
-                    }
+                    gattServerOpen.set(true)
+                    deliverGattReady()
                 }
             }
+        } else if (gattServerOpen.get()) {
+            Timber.v("Already started")
+            deliverGattReady()
         } else {
             Timber.v("Already started")
         }
@@ -496,18 +541,21 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
             } else {
                 startServer(context) { serverStarted ->
                     if (serverStarted) {
-                        for (readCallback in overallGattEventListeners) {
-                            readCallback.onFitbitGattReady()
-                        }
+                        gattServerOpen.set(true)
+                        deliverGattReady()
                     } else {
                         Timber.w("Could not get an instance of a gatt server")
                         for (readCallback in overallGattEventListeners) {
                             readCallback.onFitbitGattStartFailed()
                         }
                         isStarted.set(false)
+                        resetGattReady()
                     }
                 }
             }
+        } else if (gattServerOpen.get()) {
+            Timber.v("Already started")
+            deliverGattReady()
         } else {
             Timber.v("Already started")
         }
@@ -718,6 +766,11 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
 
     private fun addConnectedDevices(context: Context) {
         Timber.v("Adding connected or bonded devices")
+        val missingConnect = GattUtils.missingConnectPermission(context)
+        if (missingConnect != null) {
+            Timber.w("Skipping bonded and connected devices, missing %s", missingConnect)
+            return
+        }
         val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager?
         if (manager != null) {
             val adapter = manager.adapter
