@@ -56,8 +56,16 @@ public class PeripheralScannerTest {
     private static HandlerThread otherDelayHandlerThread;
     private static Handler otherDelayHandler;
     private static HandleIntentBasedScanResult handleIntentBasedScanResult;
+    // ACCESS_FINE_LOCATION is maxSdkVersion 30. API 31+ declares BLUETOOTH_SCAN.
     @Rule
-    public GrantPermissionRule mRuntimePermissionRule = GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION);
+    public GrantPermissionRule mRuntimePermissionRule = GrantPermissionRule.grant(scanRuntimePermission());
+
+    private static String scanRuntimePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return android.Manifest.permission.BLUETOOTH_SCAN;
+        }
+        return android.Manifest.permission.ACCESS_FINE_LOCATION;
+    }
 
     @Before
     public void before(){
