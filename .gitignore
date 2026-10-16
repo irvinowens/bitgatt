@@ -26,3 +26,6 @@ ReleaseValues
 *.pyc
 !quality/**
 .project
+# Local advertiser names for a device run. The sample file is the committed shape.
+device-names.yaml
+device-names.local.yaml

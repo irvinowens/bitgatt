@@ -42,6 +42,7 @@ import com.fitbit.bluetooth.fbgatt.tx.ClearServerServicesTransaction
 import com.fitbit.bluetooth.fbgatt.tx.GattConnectTransaction
 import com.fitbit.bluetooth.fbgatt.util.GattUtils
 import com.fitbit.bluetooth.fbgatt.util.LooperWatchdog
+import java.io.File
 import java.util.ArrayList
 import java.util.Arrays
 import java.util.Collections
@@ -342,6 +343,23 @@ open class FitbitGatt private constructor() : PeripheralScanner.TrackerScannerLi
             return
         }
         scanner.setDeviceNameFilters(deviceNameFilters)
+    }
+
+    /**
+     * Replace the device-name scan filters with the names in a YAML file.
+     * [setDeviceNameScanFilters] remains the direct setter. A missing file applies
+     * no names. No product family is assumed.
+     *
+     * Shape:
+     * deviceNames:
+     *   - Example Peripheral
+     *
+     * @return the names applied, empty when the file is missing or lists none
+     */
+    fun setDeviceNameFiltersFromYaml(@NonNull file: File): List<String> {
+        val names = DeviceNameFilterFile.load(file)
+        setDeviceNameScanFilters(names)
+        return names
     }
 
     fun addDeviceNameScanFilter(deviceName: String?) {

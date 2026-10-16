@@ -1,0 +1,4 @@
+# Device-name scan filters. One advertised name per item.
+# A missing file loads no names. Replace the placeholder locally; do not commit a real advertiser.
+deviceNames:
+  - Example Peripheral

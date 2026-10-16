@@ -118,6 +118,11 @@ package com.fitbit.bluetooth.fbgatt {
     method public void onServicesDiscovered(@NonNull com.fitbit.bluetooth.fbgatt.TransactionResult, @NonNull com.fitbit.bluetooth.fbgatt.GattConnection);
   }
 
+  public final class DeviceNameFilterFile {
+    method @NonNull public static List<String> load(@NonNull File);
+    method @NonNull public static List<String> parse(@NonNull String);
+  }
+
   public class FitbitBluetoothDevice {
     ctor public FitbitBluetoothDevice(@NonNull BluetoothDevice);
     ctor public FitbitBluetoothDevice(String, String);
@@ -213,6 +218,7 @@ package com.fitbit.bluetooth.fbgatt {
     method public final void registerGattServerListener(@NonNull com.fitbit.bluetooth.fbgatt.GattServerListener listener);
     method public final void resetScanFilters();
     method @VisibleForTesting public final void setBluetoothListener(@Nullable com.fitbit.bluetooth.fbgatt.BluetoothRadioStatusListener listener);
+    method @NonNull public final java.util.List<java.lang.String> setDeviceNameFiltersFromYaml(@NonNull File file);
     method public final void setDeviceNameScanFilters(@Nullable java.util.List<java.lang.String> deviceNameFilters);
     method public final void setExtendedScanEnabled(boolean enabled);
     method @VisibleForTesting public final void setGattServer(@Nullable com.fitbit.bluetooth.fbgatt.GattServerConnection gattServer);
