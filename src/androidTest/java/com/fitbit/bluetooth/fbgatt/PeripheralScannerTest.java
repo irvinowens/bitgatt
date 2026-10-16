@@ -10,6 +10,7 @@ package com.fitbit.bluetooth.fbgatt;
 
 import android.bluetooth.le.ScanFilter;
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -262,6 +263,9 @@ public class PeripheralScannerTest {
         assertFalse(FitbitGatt.getInstance().getPeripheralScanner().isScanning());
         FitbitGatt.getInstance().getPeripheralScanner().resetFilters();
         final List<String> loadedNames = FitbitGatt.getInstance().setDeviceNameFiltersFromYaml(deviceNameFilterFile());
+        Intent foreground = new Intent(appContext, ScanForegroundActivity.class);
+        foreground.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        appContext.startActivity(foreground);
         FitbitGatt.getInstance().getPeripheralScanner().startHighPriorityScan(appContext);
         CountDownLatch cdl = new CountDownLatch(1);
         handler.postDelayed(() -> {
