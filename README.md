@@ -60,14 +60,17 @@ and does not derive a location. A host that does derive location has to override
 and declare the location permission itself. `neverForLocation` can also filter some beacons out of
 scan results. The library does not call `requestPermissions`; the host app does.
 
-This library's `targetSdk` is 37. Merging it can raise the host app's merged target SDK.
+`compileSdk` and `targetSdk` are 37. `minSdk` is 21. Merging the library can raise the host app's merged target SDK. A direct connect stays `autoConnect` false on every API. On API 37 it uses `BluetoothGattConnectionSettings` and a non-main executor. API 26 through 36 use `connectGatt` with `TRANSPORT_LE` and `PHY_LE_1M_MASK`.
+
+The public facade is Kotlin. `FitbitGatt`, `GattConnection`, `GattServerConnection`, `TransactionResult`, `StrategyProvider`, `AndroidDevice`, and the advertiser types are Kotlin. Java callers keep the same method names. `GattConnection.runTx` still takes a callback. It also has a suspending overload.
 
 After the manifest merge, provide the services that you wish to add to the gatt server
 to the start call, alongside any filters you wish to add to the periodical scan if any.
 
 This will call back once all of the services are added, and the scanner is set up.  If you do not
 wish to use local services, or the periodical scanner, then you can just call start(Context context)
-and wait for the callback to start communicating with devices.
+and wait for the callback to start communicating with devices. A later start, once the server is
+already open, still calls `onFitbitGattReady` for listeners that have not received it.
 
 ## [Threading](#threading)
 
@@ -84,6 +87,14 @@ The threading model of the Android gatt is extremely fraught with landmines.
   issues are caught right away (because it's I/O on the main thread).  This is the same
   pattern as an Android broadcast receiver so it is wise to get off of the main thread as
   soon as possible to create a responsive system.
+
+  That connection thread is a `ConnectionEngine`. Each client connection has one coroutine
+  scope on a single-thread executor named `"<device> GATT Transaction Thread"`. The GATT server
+  has its own engine, `"GATT Server Transaction Thread"`. `TransactionQueueController` is the
+  shell around that engine. There is no second queue. Work on one connection is serial. Other
+  connections run at the same time. `clearQueue` drops work that has not started and leaves the
+  thread running. `stop` runs when the connection is finished. Timeouts are posted on the main
+  looper, and `commit` will not run on the main thread.
   
   Responses will be copies of characteristics, descriptors, and services.  These copies are not
   able to be handed back to the system as instantiating new characteristics, descriptors and
@@ -113,8 +124,8 @@ The threading model of the Android gatt is extremely fraught with landmines.
                               ┌┴────────────────▼───────────────────┐│                            │                               ▼
                              ┌┴────────────────────────────────────┐││                            │           ┌───────────────────────────────────────┐
                              │GattConnection                       │││                            │           │GattServerConnection                   │
-                             │Looper per connection object         │││                            │           │Looper for the gatt server             │
-                             │Looper for gatt transaction timeout  │││                            │           │                                       │
+                             │ConnectionEngine serial thread       │││                            │           │ConnectionEngine serial thread         │
+                             │timeouts on the main looper          │││                            │           │                                       │
                              │                                     │││                            │           │                                       │
                              │                                     │││                            │           │                                       │
                              │                                     │││                            │           │                                       │
@@ -126,7 +137,7 @@ The threading model of the Android gatt is extremely fraught with landmines.
                                                                                                   │
                                                                                                   │
                              ┌─────────────────────────────────────┐                              │
-                             │TrackerScanner                       │                              │
+                             │PeripheralScanner                    │                              │
                              │ Main Looper                         │                              │
                              │                                     │                              │
                              │                                     │      Pushes candidate        │
@@ -137,7 +148,7 @@ The threading model of the Android gatt is extremely fraught with landmines.
                              └─────────────────────────────────────┘
 
                               ╔════════════════════════════════╗
-                              ║ The tracker scanner will find  ║
+                              ║ The peripheral scanner finds   ║
                               ║devices that match a filter and ║
                               ║will add them into the cache in ║
                               ║  the gatt.  They will only be  ║
@@ -180,7 +191,7 @@ where two different higher level operations could start a connection
 attempt.  If you make connecting explicit on a single-threaded implementation,
  then this is by nature impossible, and the errors caused by it are eliminated.
  
-Transactions are atomic.  A subsequent transaction provided to the connection transaction queue
+Transactions are atomic.  A subsequent transaction given to that connection's `ConnectionEngine`
 will not be executed until the prior running transaction completes in success, failure, or timeout.
 
 ### Transaction Strategies
@@ -203,10 +214,15 @@ to return your own strategies.  You could determine the firmware version and aft
 
 ## [Validation](#validation)
 
-The transaction entry states are guarded by a transaction validator
-that verifies that the gatt is in a good state and is ready to
-be used by a client.  If it isn't it will return a clear transaction result
-error that will allow the developer to understand why it isn't working.
+The transaction entry states are guarded by `Admit`. `Admit.check` takes the connection's
+current `GattState`, the transaction success state, and whether the transaction
+`admitsRegardlessOfState`. `BT_OFF` is always rejected. `SetClientConnectionStateTransaction`
+and `SetServerConnectionStateTransaction` are otherwise admitted. A connect is admitted only
+from `DISCONNECTED` or `CONNECTING`. A disconnect is admitted only from `IDLE` or `CONNECTED`.
+From `DISCONNECTED` or `DISCONNECTING`, any other success state is rejected. After those
+rules, an idle or in-progress current state other than those two admits a success state whose
+`StateType` is `IDLE`. Any other pair, including an error state, is `INVALID_TARGET_STATE`.
+The callback is then `TransactionResultStatus.INVALID_STATE`.
 
 ## [Pre/Post Commit Deprecated](#pre-post-commit-deprecated)
 
@@ -309,6 +325,15 @@ class Test {
     }
 }
 ```
+The same calls suspend from Kotlin.
+```kotlin
+suspend fun connectAndDiscover(conn: GattConnection) {
+    val connected = conn.runTx(GattConnectTransaction(conn, GattState.CONNECTED))
+    if (connected.resultStatus == TransactionResult.TransactionResultStatus.SUCCESS) {
+        conn.runTx(GattClientDiscoverServicesTransaction(conn, GattState.DISCOVERY_SUCCESS))
+    }
+}
+```
 Scanning (periodical scan) ... remember the idea behind the scanner is that it should be treated
 as a system resource, there should be a single periodical scan, and / or intent scan that occurs
 with multiple filters.  There can be multiple listeners to scan results.
@@ -360,9 +385,44 @@ class Test {
     }
 }
 ```
-Advertising is explicit. `start` and Bluetooth turning back on do not advertise. A connectable
-request waits until the GATT server is idle and already hosting the services. Call `stop` to
-leave the air; nothing resumes it for you.
+Device-name filters can be loaded from a YAML file. A missing file applies no names.
+`setDeviceNameScanFilters` replaces every current scan filter with one `setDeviceName` filter
+per list entry. `addDeviceNameScanFilter` appends a name and leaves the other filters in place.
+```java
+class Test {
+    public void doNameFilterScan() {
+        FitbitGatt gatt = FitbitGatt.getInstance();
+        gatt.start(this);
+        // device-names.sample.yaml:
+        // deviceNames:
+        //   - Example Peripheral
+        List<String> names = gatt.setDeviceNameFiltersFromYaml(new File(getFilesDir(), "device-names.yaml"));
+        boolean success = gatt.startPeriodicScan(this);
+        if (!success) {
+            Timber.v("The name-filter scan didn't start, names applied: %s", names);
+        }
+    }
+}
+```
+Advertising is explicit. `FitbitGatt.getAdvertiser()` returns one `BitGattAdvertiser`. `start`
+and Bluetooth turning back on do not advertise. `start(AdvertiseRequest)` returns null when the
+platform start was issued. A non-null `AdvertiseError` was refused before the radio:
+`bluetoothOff`, `missingPermission` (`BLUETOOTH_ADVERTISE` on API 31 and higher, otherwise
+`BLUETOOTH_ADMIN`), `ALREADY_STARTED`, `serverNotReady`, or `FEATURE_UNSUPPORTED`. A platform
+failure maps to `DATA_TOO_LARGE`, `TOO_MANY_ADVERTISERS`, `ALREADY_STARTED`,
+`FEATURE_UNSUPPORTED`, or `INTERNAL_ERROR`, and `onAdvertiseStateChanged` is called. An
+advertise failure does not touch the connection engine.
+
+A connectable request is refused with `serverNotReady` unless the GATT server is `IDLE` and
+already hosting services. If `advertiseData` lists service UUIDs, every one of those UUIDs
+must already be hosted. With no `advertiseData`, the payload is the hosted service UUIDs. A
+non-connectable request does not require a server. `AdvertiseRequest` defaults to connectable,
+not scannable, legacy, 1M primary and secondary PHY, interval 400, medium tx power, and no
+scan response. There is no periodic-advertising field. On API 26 and higher, when the
+controller supports extended advertising, the start uses an advertising set and passes those
+PHY, interval, legacy, and scannable fields. Otherwise it uses legacy `startAdvertising` in
+balanced mode with the request's connectable flag and tx power. Bluetooth turning off, and
+opening a server, call `stop`. `stop` leaves the air. Nothing resumes it.
 ```java
 class Test {
     public void doAdvertise() {
@@ -394,6 +454,30 @@ your users' phone.  Bitgatt will prevent you from using more than one additional
 if you only used a single gatt_if.
 
 If you do not know what a gatt_if is, it is advisable to use the periodical scanner instead.
+On API 31 and higher the scan `PendingIntent` is `FLAG_UPDATE_CURRENT | FLAG_MUTABLE`. The
+Bluetooth stack writes the result extras, so the intent cannot be immutable. The result
+receiver stays exported.
+
+Device-name filters can be loaded from YAML with `setDeviceNameFiltersFromYaml`. That call
+reads the file through `DeviceNameFilterFile` and replaces the scanner's filters. A missing
+file, or a file that lists no names, applies an empty list. No product names are built in.
+`device-names.sample.yaml` is the shape:
+
+```
+deviceNames:
+  - Example Peripheral
+```
+
+Lines under `deviceNames` that start with `-` are names. A `#` comment outside quotes is
+ignored, and either quote style is stripped. `setDeviceNameScanFilters` does the same
+replacement from a list and clears filters that were already set. `addDeviceNameScanFilter`
+appends one name.
+
+`setExtendedScanEnabled` is off by default. When it is on, and the device is API 26 or higher,
+scan settings request non-legacy advertisements on the 1M and coded PHYs. A start is refused
+when scan permission is missing: `BLUETOOTH_SCAN` on API 31 and higher, otherwise `BLUETOOTH`
+and `ACCESS_FINE_LOCATION`. While any connection is `CONNECTING`, the next start is delayed
+by 200ms and that call returns false.
 
 The periodical scanner is an app timer, not Core Spec periodic advertising. It scans for
 `SCAN_DURATION` (120s), then sleeps `SCAN_INTERVAL` (240s). After an empty result the sleep
@@ -546,10 +630,11 @@ class Test {
 
 ## [Bluetooth State on Android Device](#bluetooth-state-on-android-device)
 
-If the user disables Bluetooth, bitgatt will manage that state accordingly, it will drop any pending
-transactions in the queue and stop the queues as well as setting it's internal bluetooth state to
-off.  All held connection objects will be set to the disconnected state, but they will not be
-released.
+If the user disables Bluetooth, bitgatt stops advertising and cancels a running scan. It drops
+queued work with `clearQueue` and leaves each connection engine thread running. Held connection
+objects are closed and set to `BT_OFF`. They stay in the cache. When Bluetooth turns back on,
+those connections are set to `DISCONNECTED` and the GATT server is opened again. Advertising
+is not started again.
 
 ## [Runtime Mocking](#runtime-mocking)
 
@@ -596,10 +681,11 @@ The transaction manual will explain in detail what each transaction does as well
 play into transactions.  A strategy can hook into a transaction or transaction subclass to perform
 other transactions or to operate on the raw gatt instance.
 
-When below the transaction indicates that it blocks on error, this indicates that the transaction will
-leave the connection queue in a state that will not allow subsequent transactions to execute until the
-developer runs either the SetClientConnectionStateTransaction, or the SetServerConnectionStateTransaction
+When below the transaction indicates that it blocks on error, this indicates that the transaction can
+leave the connection in an error `GattState`. The engine keeps running. `Admit` will not let the next
+ordinary transaction start until the developer runs either the SetClientConnectionStateTransaction, or the SetServerConnectionStateTransaction
 explicitly setting the state to one of the IDLE connection states ( DISCONNECTED, IDLE, or CONNECTED ).
+`BT_OFF` still rejects those reset transactions.
 
 What this does is force the developer to acknowledge that the last transaction ran into a severe error, and
 that they have done something to mitigate this error or that they are choosing to ignore it.
@@ -1138,8 +1224,8 @@ called on a non-oreo and higher Android device will be a no-op.
 
 ### SetClientConnectionStateTransaction
 
- Will set the client connection state to whatever the developer wishes.  If the transaction queue
- gets halted by an error, this can be reset to whatever idle state is appropriate.
+ Will set the client connection state to whatever the developer wishes.  If an error state is
+ rejecting the next transaction, this can be reset to whatever idle state is appropriate.
  
  This transaction is designed to block the transaction queue while modifying the state of the
  connection.  This should only be used to reset the connection to a usable state after an error
@@ -1160,8 +1246,8 @@ called on a non-oreo and higher Android device will be a no-op.
 
 ### SetServerConnectionStateTransaction
 
- Will set the server connection state to whatever the developer wishes.  If the transaction queue
- gets halted by an error, this can be reset to whatever idle state is appropriate.
+ Will set the server connection state to whatever the developer wishes.  If an error state is
+ rejecting the next transaction, this can be reset to whatever idle state is appropriate.
  
  This transaction is designed to block the transaction queue while modifying the state of the
  connection.  This should only be used to reset the connection to a usable state after an error
